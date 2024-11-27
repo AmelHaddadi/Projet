@@ -2,6 +2,7 @@ import pygame
 import random
 
 from unit import *
+from competence import Competence
 
 
 class Game:
@@ -29,15 +30,34 @@ class Game:
             La surface de la fenêtre du jeu.
         """
         self.screen = screen
-        self.player_units = [Unit(0, 0, 10, 2, 'player'),
+        self.player_units = [Unit(0, 0, 10, 2, 'player'),    #(x,y,health,attack_power,team)
                              Unit(1, 0, 10, 2, 'player')]
 
         self.enemy_units = [Unit(6, 6, 8, 1, 'enemy'),
                             Unit(7, 6, 8, 1, 'enemy')]
+        
+    
+        # Ajout de compétences aux unités
+        self.ajouter_competences()
+
+    def ajouter_competences(self):
+        """Ajoute des compétences aux unités."""
+        # Créer des compétences
+        boule_de_feu = Competence("Boule de Feu", degats=25, portee=3, effet=None)
+        soin = Competence("Soin", degats=20, portee=2, effet="soin")
+        poison = Competence("Poison", degats=10, portee=2, effet="poison")
+
+        # Ajouter des compétences aux unités du joueur
+        self.player_units[0].ajouter_competence(boule_de_feu)  # Unité 0 : "Boule de Feu"
+        self.player_units[1].ajouter_competence(soin)         # Unité 1 : "Soin"
+
+        # Ajouter des compétences aux ennemis
+        self.enemy_units[0].ajouter_competence(poison)        # Ennemi 0 : "Poison"
+
 
     def handle_player_turn(self):
         """Tour du joueur"""
-        for selected_unit in self.player_units:
+        for selected_unit in self.player_units:  #Parcourt chaque unité du joueur pour lui permettre de jouer.
 
             # Tant que l'unité n'a pas terminé son tour
             has_acted = False
@@ -70,14 +90,23 @@ class Game:
                         selected_unit.move(dx, dy)
                         self.flip_display()
 
-                        # Attaque (touche espace) met fin au tour
+                        # Attaque (touche espace) met fin au tour Attaque 
+                    
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
                                 if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
                                     selected_unit.attack(enemy)
                                     if enemy.health <= 0:
-                                        self.enemy_units.remove(enemy)
+                                        self.enemy_units.remove(enemy)  #si l'ennemi n'a plus de barre de santé il sera supprimé
 
+                            has_acted = True   #has_acted : Booléen qui permet de s'assurer que l'unité termine ses actions avant de passer à l'unité suivante.
+                            selected_unit.is_selected = False
+                         # Utiliser une compétence (touche "C")
+                        if event.key == pygame.K_c:
+                            for enemy in self.enemy_units:
+                                selected_unit.utiliser_competence("Boule de Feu", enemy)
+                                if enemy.health <= 0:
+                                    self.enemy_units.remove(enemy)  # Retire l'ennemi s'il n'a plus de santé
                             has_acted = True
                             selected_unit.is_selected = False
 
@@ -90,12 +119,15 @@ class Game:
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
             enemy.move(dx, dy)
-
-            # Attaque si possible
+             # Attaque ou utilisation de compétence
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
-                enemy.attack(target)
+                if random.random() > 0.5 and enemy.competences:  # 50 % de chances d'utiliser une compétence
+                    enemy.utiliser_competence("Poison", target)
+                else:
+                    enemy.attack(target)
                 if target.health <= 0:
                     self.player_units.remove(target)
+
 
     def flip_display(self):
         """Affiche le jeu."""
