@@ -5,12 +5,22 @@ from competence import Competence
 from AnimationManager import AnimationManager
 from CompetenceManager import CompetenceManager
 from MenuManager import MenuManager
+from MenuSelection import *
 
 # Constantes
 WIDTH, HEIGHT = 800, 600  # Dimensions de la fenêtre
 GRID_SIZE = 8  # Taille de la grille
 CELL_SIZE = 40  # Taille d'une cellule
 WHITE, BLACK, RED, GREEN, BLUE = (255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)
+
+pygame.mixer.init()
+
+# Charger un son d'explosion
+try:
+     explosion_sound = pygame.mixer.Sound("explosion.wav")  
+except pygame.error as e:
+    print("Erreur lors du chargement du son :", e)
+    explosion_sound = None  # Si le son ne peut pas être chargé, on continue sans
 
 class Game:
     """
@@ -26,10 +36,14 @@ class Game:
         self.font = pygame.font.Font(None, 36)
 
         # Initialisation des unités
-        self.player_units = [Unit(0, 0, 100, 2, 'player', 'guerrier', vitesse=4),
-                             Unit(1, 0, 100, 2, 'player', 'arche', vitesse=4)]
-        self.enemy_units = [Unit(6, 6, 100, 1, 'enemy', 'guerrier_ennemie', vitesse=4),
-                            Unit(7, 6, 100, 1, 'enemy', 'arche_ennemie', vitesse=4)]
+        self.player_units = [Unit(0, 0, 100, 2, 'player', 'tueur', vitesse=4),
+                             Unit(1, 0, 100, 2, 'player', 'tireur', vitesse=4),
+                             Unit(2, 0, 100, 2, 'player', 'sorcier', vitesse=4),
+                             Unit(3, 0, 100, 2, 'player', 'tank', vitesse=4)]
+        self.enemy_units = [Unit(6, 6, 100, 1, 'enemy', 'tueur', vitesse=4),
+                            Unit(7, 6, 100, 1, 'enemy', 'tireur', vitesse=4),
+                            Unit(8, 6, 100, 1, 'enemy', 'sorcier', vitesse=4),
+                            Unit(9, 6, 100, 1, 'enemy', 'tank', vitesse=4)]
 
         # Initialisation des gestionnaires
         colors = {'white': WHITE, 'black': BLACK, 'red': RED, 'green': GREEN, 'blue': BLUE}
@@ -44,13 +58,31 @@ class Game:
 
     def ajouter_competences(self):
         """Ajoute des compétences aux unités."""
-        boule_de_feu = Competence("Boule de Feu", degats=25, portee=3, effet=None)
-        soin = Competence("Soin", degats=20, portee=2, effet="soin")
-        poison = Competence("Poison", degats=10, portee=2, effet="poison")
+        pistolet = Competence("Pistolet", degats=20, portee=5, effet=None)
+        grenade = Competence("Grenade", degats=50, portee=3, effet="soin")
+        dague = Competence("Dague", degats=30, portee=1, effet="poison")
+        bouclier = Competence("Bouclier", degats=0, portee=0, effet="soin")
+        baton_magique = Competence("Baton magique", degats=40, portee=4, effet="poison")
 
-        self.player_units[0].ajouter_competence(boule_de_feu)  # Unité guerrier
-        self.player_units[1].ajouter_competence(soin)  # Unité arche
-        self.enemy_units[0].ajouter_competence(poison)  # Ennemi guerrier
+        self.player_units[0].ajouter_competence(pistolet)  # Unité tueur
+        self.player_units[0].ajouter_competence(grenade)  # Unité tueur
+        self.player_units[1].ajouter_competence(pistolet)  # Unité tireur
+        self.player_units[1].ajouter_competence(dague)  # Unité tireur
+        self.player_units[2].ajouter_competence(pistolet)  # Unité sorcier
+        self.player_units[2].ajouter_competence(baton_magique)  # Unité sorcier
+        self.player_units[3].ajouter_competence(pistolet)  # Unité tank
+        self.player_units[3].ajouter_competence(bouclier)  # Unité tank
+       
+        self.enemy_units[0].ajouter_competence(pistolet)  # Unité tueur
+        self.enemy_units[0].ajouter_competence(grenade)  # Unité tueur
+        self.enemy_units[1].ajouter_competence(pistolet)  # Unité tireur
+        self.enemy_units[1].ajouter_competence(dague)  # Unité tireur
+        self.enemy_units[2].ajouter_competence(pistolet)  # Unité sorcier
+        self.enemy_units[2].ajouter_competence(baton_magique)  # Unité sorcier
+        self.enemy_units[3].ajouter_competence(pistolet)  # Unité tank
+        self.enemy_units[3].ajouter_competence(bouclier)  # Unité tank
+        
+
     def utiliser_competence(self, selected_unit):
         """Permet au joueur d'utiliser une compétence."""
         # Vérifier si l'unité a des compétences
@@ -85,6 +117,13 @@ class Game:
             self.animation_manager.animer_attaque(cible.x, cible.y)
 
         self.competence_manager.utiliser_competence(competence, selected_unit, cible)
+
+        # Ajouter ici l'appel au son d'explosion si la compétence est "Boule de Feu"
+        if competence.nom == "grenade" and explosion_sound:
+            explosion_sound.play()  # Joue le son d'explosion
+
+        self.competence_manager.utiliser_competence(competence, selected_unit, cible)
+
 
         # Vérifier si la cible est éliminée
         if cible.health <= 0:
