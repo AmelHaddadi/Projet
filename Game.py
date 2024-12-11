@@ -36,14 +36,14 @@ class Game:
         self.font = pygame.font.Font(None, 36)
 
         # Initialisation des unités
-        self.player_units = [Unit(0, 0, 100, 2, 'player', 'tueur', vitesse=4),
-                             Unit(1, 0, 100, 2, 'player', 'tireur', vitesse=4),
-                             Unit(2, 0, 100, 2, 'player', 'sorcier', vitesse=4),
-                             Unit(3, 0, 100, 2, 'player', 'tank', vitesse=4)]
-        self.enemy_units = [Unit(6, 6, 100, 1, 'enemy', 'tueur', vitesse=4),
-                            Unit(7, 6, 100, 1, 'enemy', 'tireur', vitesse=4),
-                            Unit(8, 6, 100, 1, 'enemy', 'sorcier', vitesse=4),
-                            Unit(9, 6, 100, 1, 'enemy', 'tank', vitesse=4)]
+        self.player_units = [Unit(0, 0, 100, 2, 'player', 'tueur', 4,image_path="tueur.png"),
+                             Unit(1, 0, 100, 2, 'player', 'tireur', 2,image_path="tireur.png"),
+                             Unit(2, 0, 100, 2, 'player', 'sorcier', 4,image_path="sorcier.png"),
+                             Unit(3, 0, 100, 2, 'player', 'tank', 4,image_path="tank.png")]
+        self.enemy_units = [Unit(6, 6, 100, 1, 'enemy', 'tueur_enemy', 4,image_path="tueur_enemy.png"),
+                            Unit(7, 6, 100, 1, 'enemy', 'tireur_enemy', 4,image_path="tireur_enemy.png"),
+                            Unit(8, 6, 100, 1, 'enemy', 'sorcier_enemy', 4,image_path="sorcier_enemy.png"),
+                            Unit(9, 6, 100, 1, 'enemy', 'tank_enemy', 4,image_path="tank_enemy.png")]
 
         # Initialisation des gestionnaires
         colors = {'white': WHITE, 'black': BLACK, 'red': RED, 'green': GREEN, 'blue': BLUE}
@@ -51,18 +51,20 @@ class Game:
 
         self.animation_manager = AnimationManager(screen, colors, dimensions, CELL_SIZE)
         self.menu_manager = MenuManager(screen, self.font, colors, dimensions)
-        self.competence_manager = CompetenceManager()
+        #self.competence_manager = CompetenceManager()
 
         # Ajout de compétences
         self.ajouter_competences()
-
+         # Initialisation des gestionnaires
+        self.competence_manager = CompetenceManager()  # Initialisation de CompetenceManager
+        
     def ajouter_competences(self):
         """Ajoute des compétences aux unités."""
-        pistolet = Competence("Pistolet", degats=20, portee=5, effet=None)
-        grenade = Competence("Grenade", degats=50, portee=3, effet="soin")
-        dague = Competence("Dague", degats=30, portee=1, effet="poison")
-        bouclier = Competence("Bouclier", degats=0, portee=0, effet="soin")
-        baton_magique = Competence("Baton magique", degats=40, portee=4, effet="poison")
+        pistolet = Competence("Pistolet", degats=20, portee=5, effet="blessure")
+        grenade = Competence("Grenade", degats=50, portee=3, effet="explosion")
+        dague = Competence("Dague", degats=30, portee=1, effet="saignement")
+        bouclier = Competence("Bouclier", degats=0, portee=1, effet="blocage")
+        baton_magique = Competence("Baton magique", degats=40, portee=4, effet="soin")
 
         self.player_units[0].ajouter_competence(pistolet)  # Unité tueur
         self.player_units[0].ajouter_competence(grenade)  # Unité tueur
@@ -82,6 +84,12 @@ class Game:
         self.enemy_units[3].ajouter_competence(pistolet)  # Unité tank
         self.enemy_units[3].ajouter_competence(bouclier)  # Unité tank
         
+    def activer_bouclier(self, tank):
+        """Active automatiquement l'effet Bouclier pour le Tank."""
+        if "blocage" not in tank.etats:
+            tank.etats.append("blocage")
+            print(f"{tank.nom} active Bouclier : réduction automatique des dégâts.")
+
 
     def utiliser_competence(self, selected_unit):
         """Permet au joueur d'utiliser une compétence."""
@@ -122,22 +130,20 @@ class Game:
         if competence.nom == "grenade" and explosion_sound:
             explosion_sound.play()  # Joue le son d'explosion
 
-        self.competence_manager.utiliser_competence(competence, selected_unit, cible)
-
-
         # Vérifier si la cible est éliminée
         if cible.health <= 0:
             if cible.team == 'enemy':
                 self.enemy_units.remove(cible)
             else:
                 self.player_units.remove(cible)
-
+        #Verifier si le jeu est terminé
+        self.check_end_game()
     def handle_player_turn(self):
         """Tour du joueur."""
         for selected_unit in self.player_units:
             has_acted = False
             selected_unit.is_selected = True
-            self.flip_display()
+            self.flip_display(active_unit=selected_unit)  # Mettre en évidence l'unité active
 
             while not has_acted:
                 for event in pygame.event.get():
@@ -149,6 +155,8 @@ class Game:
                             self.utiliser_competence(selected_unit)
                             has_acted = True
                             selected_unit.is_selected = False
+                            #Verifier si le jeu est terminé
+                            self.check_end_game()
                         elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
                             dx, dy = 0, 0
                             if event.key == pygame.K_LEFT:
@@ -160,12 +168,17 @@ class Game:
                             elif event.key == pygame.K_DOWN:
                                 dy = 1
                             selected_unit.move(dx, dy)
-                            self.flip_display()
+                            self.flip_display(active_unit=selected_unit)  # Mettre à jour l'affichage
                             has_acted = True
+                            #Verifier si le jeu est terminé
+                            self.check_end_game()
+
 
     def handle_enemy_turn(self):
         """Tour des ennemis."""
         for enemy in self.enemy_units:
+            #Verifier si le jeu est terminé
+            self.check_end_game()
             target = random.choice(self.player_units)
             dx, dy = (1 if enemy.x < target.x else -1 if enemy.x > target.x else 0,
                       1 if enemy.y < target.y else -1 if enemy.y > target.y else 0)
@@ -185,26 +198,115 @@ class Game:
                     self.player_units.remove(target)
             self.flip_display()
 
-    def flip_display(self):
-        """Affiche l'état du jeu."""
-        self.screen.fill(WHITE)
-        for x in range(0, WIDTH, CELL_SIZE):
-            for y in range(0, HEIGHT, CELL_SIZE):
-                pygame.draw.rect(self.screen, BLACK, pygame.Rect(x, y, CELL_SIZE, CELL_SIZE), 1)
+    def flip_display(self, active_unit=None):
+        """Met à jour l'affichage du jeu, en mettant en évidence l'unité active."""
+        self.screen.fill((0, 0, 0))  # Efface l'écran
+
+        # Afficher toutes les unités
         for unit in self.player_units + self.enemy_units:
-            unit.draw(self.screen)
+            is_active = (unit == active_unit)  # L'unité active est celle en cours de jeu
+            unit.draw(self.screen, is_active=is_active)
+
         pygame.display.flip()
 
+
     def check_end_game(self):
-        """Vérifie si une équipe a gagné ou perdu."""
-        if not self.enemy_units:
-            print("Victoire !")
-            pygame.quit()
-            exit()
-        elif not self.player_units:
-            print("Défaite !")
-            pygame.quit()
-            exit()
+
+        """Vérifie si le jeu est terminé (victoire ou défaite)."""
+        if not self.enemy_units:  # Si tous les ennemis sont éliminés
+            action = self.afficher_interface_fin("victoire")
+            if action == "rejouer":
+                self.reinitialiser_jeu()
+        elif not self.player_units:  # Si tous les joueurs sont éliminés
+            action = self.afficher_interface_fin("echec")
+            if action == "rejouer":
+                self.reinitialiser_jeu()
+
+    def afficher_message_fin(self, message):
+        """Affiche un message de fin du jeu (Victoire ou Défaite)."""
+        self.screen.fill((0, 0, 0))  # Fond noir
+        font = pygame.font.Font(None, 72)  # Police plus grande pour le message
+        texte = font.render(message, True, (255, 255, 255))  # Texte blanc
+        texte_rect = texte.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+        self.screen.blit(texte, texte_rect)
+        pygame.display.flip()
+        pygame.time.wait(3000)  # Attendre 3 secondes avant de fermer
+
+    def afficher_interface_fin(self, resultat):
+        """
+        Affiche l'interface de fin avec un bouton pour rejouer ou quitter.
+        :param resultat: "victoire" ou "echec"
+        """
+        # Charger l'image correspondante
+        image_path = "victoire.png" if resultat == "victoire" else "defaite.png"
+        image = pygame.image.load(image_path)
+        image = pygame.transform.scale(image, (self.screen.get_width(), self.screen.get_height()))
+    
+        # Boucle pour l'interface de fin
+        while True:
+            self.screen.blit(image, (0, 0))
+
+            # Afficher les boutons
+            font = pygame.font.Font(None, 50)
+            rejouer_texte = font.render("Rejouer", True, (255, 255, 255))
+            quitter_texte = font.render("Quitter", True, (255, 255, 255))
+
+            # Dimensions des boutons
+            button_width, button_height = 200, 50
+            replay_button_rect = pygame.Rect(
+                self.screen.get_width() // 2 - button_width // 2,
+                self.screen.get_height() // 2,
+                button_width,
+                button_height
+            )
+            quit_button_rect = pygame.Rect(
+                self.screen.get_width() // 2 - button_width // 2,
+                self.screen.get_height() // 2 + 70,
+                button_width,
+                button_height
+            )
+
+            # Dessiner les boutons
+            pygame.draw.rect(self.screen, (0, 128, 0), replay_button_rect)
+            pygame.draw.rect(self.screen, (128, 0, 0), quit_button_rect)
+
+            self.screen.blit(rejouer_texte, (replay_button_rect.x + 50, replay_button_rect.y + 10))
+            self.screen.blit(quitter_texte, (quit_button_rect.x + 50, quit_button_rect.y + 10))
+
+            pygame.display.flip()
+
+            # Gestion des événements
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if replay_button_rect.collidepoint(event.pos):
+                        return "rejouer"
+                    elif quit_button_rect.collidepoint(event.pos):
+                        pygame.quit()
+                        exit()
+    def reinitialiser_jeu(self):
+        """Réinitialise le jeu en recréant les unités et réinitialisant l'état."""
+        self.player_units = [
+            Unit(0, 0, 100, 2, 'player', 'tueur', 4, image_path="tueur.png"),
+            Unit(1, 0, 100, 2, 'player', 'tireur', 2, image_path="tireur.png"),
+            Unit(2, 0, 100, 2, 'player', 'sorcier', 4, image_path="sorcier.png"),
+            Unit(3, 0, 100, 2, 'player', 'tank', 4, image_path="tank.png")
+            ]
+        self.enemy_units = [
+            Unit(6, 6, 100, 1, 'enemy', 'tueur_enemy', 4, image_path="tueur_enemy.png"),
+            Unit(7, 6, 100, 1, 'enemy', 'tireur_enemy', 4, image_path="tireur_enemy.png"),
+            Unit(8, 6, 100, 1, 'enemy', 'sorcier_enemy', 4, image_path="sorcier_enemy.png"),
+            Unit(9, 6, 100, 1, 'enemy', 'tank_enemy', 4, image_path="tank_enemy.png")
+        ]
+         # Ajout des compétences aux unités
+        self.ajouter_competences()
+
+        # Démarrer le tour des joueurs
+        self.handle_player_turn()
+    
+
 
 def main():
     pygame.init()
@@ -218,3 +320,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
