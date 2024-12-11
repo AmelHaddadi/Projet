@@ -15,7 +15,7 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
 class Unit:
-    def __init__(self, x, y, health, attack_power, team, nom="Unité", vitesse=7, etats=None, image_path=None):
+    def __init__(self, x, y, health, attack_power, team, nom="Unité", vitesse=1, etats=None, image_path=None):
         self.x = x
         self.y = y
         self.health = health
@@ -25,7 +25,7 @@ class Unit:
         self.vitesse = vitesse
         self.is_selected = False
         self.competences = []  # Liste des compétences de l'unité vide par défaut
-        self.etats = etats if etats else []  # Liste des états de l'unité (par exemple, 'empoisonné')
+        self.etats = etats if etats else []  # Liste des états de l'unité 
         
         # Charger l'image si un chemin est fourni
         self.image = pygame.image.load(image_path) if image_path else None
@@ -76,10 +76,10 @@ class Unit:
         pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, current_health_width, 5))
 
     def take_damage(self, amount):
-        """Réduit les dégâts reçus en fonction des états actifs."""
-        if "blocage" in self.etats:
+        """Réduit les dégâts reçus si la cible est un Tank."""
+        if "tank" in self.nom.lower():  # Vérifie si l'unité est un Tank
             amount //= 2  # Réduction de moitié
-            print(f"{self.nom} utilise Bouclier, dégâts réduits à {amount}.")
+            print(f"{self.nom} subit des dégâts réduits à {amount}.")
 
         self.health -= amount
         if self.health <= 0:
@@ -104,24 +104,12 @@ class Unit:
     def utiliser_competence(self, competence, utilisateur, cible):
         """Utilise une compétence spécifique sur une cible."""
         # Vérifier si la compétence est passive
-        if competence.effet == "blocage":
-            print(f"{competence.nom} est une compétence passive et ne peut pas être utilisée manuellement.")
-            return
-
-        # Appliquer la compétence normalement
         if competence.utiliser(utilisateur, cible):
             self.log.append((utilisateur.nom, competence.nom, cible.nom, "Succès"))
             if cible.health <= 0:
                 print(f"{cible.nom} a été vaincu !")
         else:
             self.log.append((utilisateur.nom, competence.nom, cible.nom, "Échec"))
-
-
-    def afficher_menu_competences(self):
-        """Affiche les compétences disponibles."""
-        # À implémenter selon l'interface graphique
-        pass
-
 
 
 

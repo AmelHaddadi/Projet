@@ -15,24 +15,25 @@ class Competence:
         """Applique l'effet spécial de la compétence à la cible."""
         if self.effet == "soin":
             cible.heal(self.degats)  # Soigne la cible en fonction des dégâts
-            print(f"{cible.nom} a été soigné de {self.degats} PV !")
+            #print(f"{cible.nom} a été soigné de {self.degats} PV !")
         elif self.effet == "explosion":
             cible.take_damage(self.degats)  # Inflige des dégâts à la cible
             cible.etats.append("explosé")  # Ajoute l'état "explosé"
-            print(f"{cible.nom} a été victime d'une zone d'explosion et subit {self.degats} dégâts !")
+            #print(f"{cible.nom} a été victime d'une zone d'explosion et subit {self.degats} dégâts !")
         elif self.effet == "blessure":
             cible.take_damage(self.degats)  # Inflige des dégâts de blessure
             cible.etats.append("blessé")
-            print(f"{cible.nom} a été blessé par le pistolet et subit {self.degats} dégâts !")
+            #print(f"{cible.nom} a été blessé par le pistolet et subit {self.degats} dégâts !")
         elif self.effet == "saignement" :
             cible.take_damage(self.degats)
             cible.etats.append("saigne")
-            print(f"{cible.nom} saigne et subit {self.degats} dégâts !")
-        elif self.effet == "blocage" :
-            cible.take_damage(self.degats)
-            cible.etats.append("bloqué")
-            print(f"{cible.nom} active Blocage : réduction des dégâts de moitié!")
-
+            #print(f"{cible.nom} saigne et subit {self.degats} dégâts !")
+    
+        #elif self.effet == "blocage" :
+            #cible.take_damage(self.degats)
+            #cible.etats.append("bloqué")
+            #print(f"{cible.nom} active Blocage : réduction des dégâts de moitié!")
+    
 
         else:
             print(f"Aucun effet spécial pour {self.nom}.")
@@ -47,6 +48,6 @@ class Competence:
             self.appliquer_effet(cible)
         else:  # Infliger les dégâts uniquement si aucun effet de type soin ou passif
             cible.take_damage(self.degats)
-            print(f"{lanceur.nom} utilise {self.nom} sur {cible.nom}, infligeant {self.degats} dégâts !")
+            #print(f"{lanceur.nom} utilise {self.nom} sur {cible.nom}, infligeant {self.degats} dégâts !")
 
         return True

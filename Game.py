@@ -78,7 +78,6 @@ class Game:
         pistolet = Competence("Pistolet", degats=20, portee=5, effet="blessure")
         grenade = Competence("Grenade", degats=50, portee=3, effet="explosion")
         dague = Competence("Dague", degats=30, portee=1, effet="saignement")
-        bouclier = Competence("Bouclier", degats=0, portee=1, effet="blocage")
         baton_magique = Competence("Baton magique", degats=40, portee=4, effet="soin")
 
         # Ajout de compétences aux unités du joueur
@@ -94,8 +93,7 @@ class Game:
                 unit.ajouter_competence(baton_magique)
             elif unit.nom == "tank":
                 unit.ajouter_competence(pistolet)
-                unit.ajouter_competence(bouclier)
-
+                
         # Ajout de compétences aux ennemis
         for unit in self.enemy_units:
             if unit.nom == "tueur":
@@ -109,27 +107,20 @@ class Game:
                 unit.ajouter_competence(baton_magique)
             elif unit.nom == "tank":
                 unit.ajouter_competence(pistolet)
-                unit.ajouter_competence(bouclier)
-
-    def activer_bouclier(self, tank):
-        """Active automatiquement l'effet Bouclier pour le Tank."""
-        if "blocage" not in tank.etats:
-            tank.etats.append("blocage")
-            print(f"{tank.nom} active Bouclier : réduction automatique des dégâts.")
-
 
     def utiliser_competence(self, selected_unit):
         """Permet au joueur d'utiliser une compétence."""
         # Vérifier si l'unité a des compétences
         if not selected_unit.competences:
             print(f"{selected_unit.nom} n'a pas de compétences.")
-            return
+            return False
 
         # Afficher le menu des compétences
         competence = self.menu_manager.selectionner_competence(selected_unit.competences)
         if not competence:  # Si le joueur annule
             print("Action annulée.")
-            return
+            self.flip_display(active_unit=selected_unit)  # Réinitialiser l'affichage
+            return False
 
         print(f"Compétence sélectionnée : {competence.nom}")  # Debug
 
@@ -143,7 +134,7 @@ class Game:
         cible = self.menu_manager.afficher_menu_cibles(cibles)
         if not cible:
             print("Action annulée.")
-            return
+            return False
 
         # Jouer l'animation et appliquer la compétence
         if competence.effet == "soin":
@@ -165,8 +156,8 @@ class Game:
                 self.player_units.remove(cible)
         #Verifier si le jeu est terminé
         self.check_end_game()
+        return True
     def handle_player_turn(self):
-        """Tour du joueur."""
         for selected_unit in self.player_units:
             has_acted = False
             selected_unit.is_selected = True
@@ -179,12 +170,14 @@ class Game:
                         exit()
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_c:
-                            self.utiliser_competence(selected_unit)
-                            has_acted = True
-                            selected_unit.is_selected = False
-                            #Verifier si le jeu est terminé
-                            self.check_end_game()
+                            # Tenter d'utiliser une compétence
+                            action_result = self.utiliser_competence(selected_unit)
+                            if action_result:  # Si une compétence a été utilisée, terminer l'action
+                                has_acted = True
+                                selected_unit.is_selected = False
+                                self.check_end_game()
                         elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
+                            # Déplacement de l'unité
                             dx, dy = 0, 0
                             if event.key == pygame.K_LEFT:
                                 dx = -1
@@ -196,10 +189,8 @@ class Game:
                                 dy = 1
                             selected_unit.move(dx, dy)
                             self.flip_display(active_unit=selected_unit)  # Mettre à jour l'affichage
-                            has_acted = True
-                            #Verifier si le jeu est terminé
+                            has_acted = True  # Fin de l'action
                             self.check_end_game()
-
 
     def handle_enemy_turn(self):
         """Tour des ennemis."""
@@ -354,9 +345,6 @@ class Game:
         # Réinitialiser les compétences
         self.ajouter_competences()
 
-
-
- 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))

@@ -33,10 +33,11 @@ font = pygame.font.Font(None, 50)
 
 # Classe pour les entités (personnages ou modes)
 class Entite:
-    def __init__(self, nom, image, position):
+    def __init__(self, nom, image, position,vitesse):
         self.nom = nom
         self.image = pygame.transform.scale(image, (150, 150))
         self.position = position
+        self.vitesse = vitesse
 
     def dessiner(self, screen, selectionne=False):
         x, y = self.position
@@ -47,18 +48,18 @@ class Entite:
 
 # Charger les personnages
 personnages = [
-    Entite("tireur", pygame.image.load("tireur.png"), (100, 200)),
-    Entite("tueur", pygame.image.load("tueur.png"), (300, 200)),
-    Entite("tank", pygame.image.load("tank.png"), (500, 200)),
-    Entite("sorcier", pygame.image.load("sorcier.png"), (700, 200)),
+    Entite("tireur", pygame.image.load("tireur.png"), (100, 200),1),
+    Entite("tueur", pygame.image.load("tueur.png"), (300, 200),1),
+    Entite("tank", pygame.image.load("tank.png"), (500, 200),1),
+    Entite("sorcier", pygame.image.load("sorcier.png"), (700, 200),1),
 ]
 
 # Charger les modes
 modes = [
-    Entite("air", pygame.image.load("air.png"), (150, 450)),
-    Entite("terre", pygame.image.load("terre.png"), (350, 450)),
-    Entite("feu", pygame.image.load("feu.png"), (550, 450)),
-    Entite("electricite", pygame.image.load("electricite.png"), (750, 450)),
+    Entite("air", pygame.image.load("air.png"), (150, 450),0),
+    Entite("terre", pygame.image.load("terre.png"), (350, 450),0),
+    Entite("feu", pygame.image.load("feu.png"), (550, 450),0),
+    Entite("electricite", pygame.image.load("electricite.png"), (750, 450),0),
 ]
 
 # Afficher du texte
