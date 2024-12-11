@@ -8,9 +8,9 @@ from MenuManager import MenuManager
 from MenuSelection import *
 
 # Constantes
-WIDTH, HEIGHT = 800, 600  # Dimensions de la fenêtre
+WIDTH, HEIGHT = 1000, 700  # Dimensions de la fenêtre
 GRID_SIZE = 8  # Taille de la grille
-CELL_SIZE = 40  # Taille d'une cellule
+CELL_SIZE = 60  # Taille d'une cellule
 WHITE, BLACK, RED, GREEN, BLUE = (255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)
 
 pygame.mixer.init()
@@ -26,13 +26,26 @@ class Game:
     """
     Classe pour représenter le jeu.
     """
-    def __init__(self, screen):
+    def __init__(self, screen,mode):
         """
         Construit le jeu avec la surface de la fenêtre.
 
         :param screen: Surface Pygame où le jeu est affiché.
         """
         self.screen = screen
+        self.mode = mode  # Mode sélectionné transmis
+        self.backgrounds = {
+            "air": pygame.image.load("air.png"),
+            "terre": pygame.image.load("terre.png"),
+            "feu": pygame.image.load("feu.png"),
+            "electricite": pygame.image.load("electricite.png"),
+        }
+        self.current_background = self.backgrounds.get(self.mode, None)
+        if self.current_background is not None:
+            self.current_background = pygame.transform.scale(self.current_background, (WIDTH, HEIGHT))
+        else:
+            print(f"Erreur : Aucun arrière-plan trouvé pour le mode {self.mode}")
+
         self.font = pygame.font.Font(None, 36)
 
         # Initialisation des unités
@@ -197,10 +210,21 @@ class Game:
                 if target.health <= 0:
                     self.player_units.remove(target)
             self.flip_display()
+    def dessiner_grille(self):
+        """Dessine une grille sur l'écran."""
+        for x in range(0, WIDTH, CELL_SIZE):
+            pygame.draw.line(self.screen, (200, 200, 200), (x, 0), (x, HEIGHT), 1)  # Lignes verticales
+        for y in range(0, HEIGHT, CELL_SIZE):
+            pygame.draw.line(self.screen, (200, 200, 200), (0, y), (WIDTH, y), 1)  # Lignes horizontales
 
     def flip_display(self, active_unit=None):
         """Met à jour l'affichage du jeu, en mettant en évidence l'unité active."""
-        self.screen.fill((0, 0, 0))  # Efface l'écran
+        if self.current_background:
+            self.screen.blit(self.current_background, (0, 0))  # Dessiner l'arrière-plan
+        else:
+            self.screen.fill((0, 0, 0))  # Fond noir si aucun arrière-plan
+
+        self.dessiner_grille()  # Dessiner la grille
 
         # Afficher toutes les unités
         for unit in self.player_units + self.enemy_units:
@@ -208,6 +232,8 @@ class Game:
             unit.draw(self.screen, is_active=is_active)
 
         pygame.display.flip()
+
+
 
 
     def check_end_game(self):
@@ -298,25 +324,34 @@ class Game:
             Unit(6, 6, 100, 1, 'enemy', 'tueur_enemy', 4, image_path="tueur_enemy.png"),
             Unit(7, 6, 100, 1, 'enemy', 'tireur_enemy', 4, image_path="tireur_enemy.png"),
             Unit(8, 6, 100, 1, 'enemy', 'sorcier_enemy', 4, image_path="sorcier_enemy.png"),
-            Unit(7, 7, 100, 1, 'enemy', 'tank_enemy', 4, image_path="tank_enemy.png")
+            Unit(9, 6, 100, 1, 'enemy', 'tank_enemy', 4, image_path="tank_enemy.png")
         ]
          # Ajout des compétences aux unités
         self.ajouter_competences()
 
         # Démarrer le tour des joueurs
         self.handle_player_turn()
-    
+
 
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Mon jeu de stratégie")
-    game = Game(screen)
+
+    # Appeler le menu de sélection
+    personnages, mode = afficher_menu_selection()
+    print(f"Mode sélectionné : {mode}")  # Vérifiez le mode sélectionné dans la console
+
+    # Passer les choix au jeu
+    game = Game(screen, mode)
 
     while True:
         game.handle_player_turn()
         game.handle_enemy_turn()
+ 
+
+
 
 if __name__ == "__main__":
     main()

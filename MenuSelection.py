@@ -76,78 +76,79 @@ clignotement = True  # Pour le texte clignotant
 clignote_event = pygame.USEREVENT + 1
 pygame.time.set_timer(clignote_event, 500)
 
-# Boucle principale
-running = True
-while running:
-    screen.fill(WHITE)
+def afficher_menu_selection():
+    """
+    Affiche le menu de sélection des personnages et du mode de jeu.
+    Retourne les personnages sélectionnés et le mode sélectionné.
+    """
+    running = True
+    step = "welcome"
+    clignotement = True
+    selected_personnages = []
+    selected_mode = None
 
-    if step == "welcome":
-        # Afficher l'écran de bienvenue
-        screen.blit(welcome_image, (0, 0))
-        if clignotement:
-            afficher_texte("Appuyez sur Entrée pour continuer", 250, 600)
+    while running:
+        screen.fill(WHITE)
 
-    elif step == "personnages":
-        # Afficher l'écran de sélection des personnages
-        screen.blit(background_image, (0, 0))
-        afficher_texte("Choisissez 2 personnages", 300, 50)
+        if step == "welcome":
+            screen.blit(welcome_image, (0, 0))
+            if clignotement:
+                afficher_texte("Appuyez sur Entrée pour continuer", 250, 600)
 
-        for personnage in personnages:
-            personnage.dessiner(screen, personnage.nom in selected_personnages)
+        elif step == "personnages":
+            screen.blit(background_image, (0, 0))
+            afficher_texte("Choisissez 2 personnages", 300, 50)
+            for personnage in personnages:
+                personnage.dessiner(screen, personnage.nom in selected_personnages)
 
-    elif step == "modes":
-        # Afficher l'écran de sélection des modes
-        screen.blit(background_image, (0, 0))
-        afficher_texte("Choisissez 1 mode de jeu", 350, 50)
+        elif step == "modes":
+            screen.blit(background_image, (0, 0))
+            afficher_texte("Choisissez 1 mode de jeu", 350, 50)
+            for mode in modes:
+                mode.dessiner(screen, mode.nom == selected_mode)
 
-        for mode in modes:
-            mode.dessiner(screen, mode.nom == selected_mode)
+        # Gestion des événements
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-            pygame.quit()
-            sys.exit()
+            if event.type == clignote_event and step == "welcome":
+                clignotement = not clignotement
 
-        if event.type == clignote_event and step == "welcome":
-            clignotement = not clignotement
+            if event.type == pygame.KEYDOWN:
+                if step == "welcome" and event.key == pygame.K_RETURN:
+                    step = "personnages"
+                elif event.key == pygame.K_ESCAPE:
+                    step = "welcome"
 
-        if event.type == pygame.KEYDOWN:
-            if step == "welcome" and event.key == pygame.K_RETURN:
-                step = "personnages"
-            elif event.key == pygame.K_ESCAPE and step != "welcome":
-                step = "welcome"
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if step == "personnages":
+                    for personnage in personnages:
+                        px, py = personnage.position
+                        if px < x < px + 150 and py < y < py + 150:
+                            if click_sound:
+                                click_sound.play()
+                            if personnage.nom in selected_personnages:
+                                selected_personnages.remove(personnage.nom)
+                            elif len(selected_personnages) < 2:
+                                selected_personnages.append(personnage.nom)
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
+                    if len(set(selected_personnages)) == 2:
+                        step = "modes"
 
-            if step == "personnages":
-                for personnage in personnages:
-                    px, py = personnage.position
-                    if px < x < px + 150 and py < y < py + 150:
-                        click_sound.play()
-                        if personnage.nom in selected_personnages:
-                            selected_personnages.remove(personnage.nom)
-                        elif len(selected_personnages) < 2:
-                            selected_personnages.append(personnage.nom)
+                elif step == "modes":
+                    for mode in modes:
+                        px, py = mode.position
+                        if px < x < px + 150 and py < y < py + 150:
+                            if click_sound:
+                                click_sound.play()
+                            selected_mode = mode.nom
 
-                if len(selected_personnages) == 2:
-                    step = "modes"
+                    if selected_mode:
+                        running = False
 
-            elif step == "modes":
-                for mode in modes:
-                    px, py = mode.position
-                    if px < x < px + 150 and py < y < py + 150:
-                        click_sound.play()
-                        selected_mode = mode.nom
+        pygame.display.flip()
 
-                if selected_mode:
-                    print(f"Personnages sélectionnés : {selected_personnages}")
-                    print(f"Mode sélectionné : {selected_mode}")
-                    afficher_texte("Merci d'avoir joué !", 300, 300)
-                    pygame.time.delay(3000)
-                    running = False
-
-    pygame.display.flip()
-
-pygame.quit()
+    return selected_personnages, selected_mode
