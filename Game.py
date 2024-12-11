@@ -26,7 +26,7 @@ class Game:
     """
     Classe pour représenter le jeu.
     """
-    def __init__(self, screen,mode):
+    def __init__(self, screen,mode,selected_characters):
         """
         Construit le jeu avec la surface de la fenêtre.
 
@@ -47,56 +47,70 @@ class Game:
             print(f"Erreur : Aucun arrière-plan trouvé pour le mode {self.mode}")
 
         self.font = pygame.font.Font(None, 36)
+         # Initialisation des unités pour le joueur
+        self.player_units = [
+            Unit(0, i, 100, 2, 'player', char_name, 4, image_path=f"{char_name}.png")
+            for i, char_name in enumerate(selected_characters)
+        ]
 
-        # Initialisation des unités
-        self.player_units = [Unit(0, 0, 100, 2, 'player', 'tueur', 4,image_path="tueur.png"),
-                             Unit(1, 0, 100, 2, 'player', 'tireur', 2,image_path="tireur.png"),
-                             Unit(2, 0, 100, 2, 'player', 'sorcier', 4,image_path="sorcier.png"),
-                             Unit(3, 0, 100, 2, 'player', 'tank', 4,image_path="tank.png")]
-        self.enemy_units = [Unit(6, 6, 100, 1, 'enemy', 'tueur_enemy', 4,image_path="tueur_enemy.png"),
-                            Unit(7, 6, 100, 1, 'enemy', 'tireur_enemy', 4,image_path="tireur_enemy.png"),
-                            Unit(8, 6, 100, 1, 'enemy', 'sorcier_enemy', 4,image_path="sorcier_enemy.png"),
-                            Unit(7, 7, 100, 1, 'enemy', 'tank_enemy', 4,image_path="tank_enemy.png")]
+        # Initialisation des unités ennemies avec 3 personnages aléatoires
+        all_characters = ["tireur", "tueur", "tank", "sorcier"]
+        enemy_characters = random.sample(all_characters, 3)
+        self.enemy_units = [
+            Unit(7, i, 100, 1, 'enemy', char_name, 4, image_path=f"{char_name}_enemy.png")
+            for i, char_name in enumerate(enemy_characters)
+        ]
 
         # Initialisation des gestionnaires
         colors = {'white': WHITE, 'black': BLACK, 'red': RED, 'green': GREEN, 'blue': BLUE}
         dimensions = {'width': WIDTH, 'height': HEIGHT}
-
         self.animation_manager = AnimationManager(screen, colors, dimensions, CELL_SIZE)
         self.menu_manager = MenuManager(screen, self.font, colors, dimensions)
-        #self.competence_manager = CompetenceManager()
 
-        # Ajout de compétences
+        # Ajouter les compétences
         self.ajouter_competences()
          # Initialisation des gestionnaires
         self.competence_manager = CompetenceManager()  # Initialisation de CompetenceManager
         
     def ajouter_competences(self):
-        """Ajoute des compétences aux unités."""
+        """Ajoute des compétences aux unités sélectionnées et aux ennemis."""
+        # Définir des compétences communes
         pistolet = Competence("Pistolet", degats=20, portee=5, effet="blessure")
         grenade = Competence("Grenade", degats=50, portee=3, effet="explosion")
         dague = Competence("Dague", degats=30, portee=1, effet="saignement")
         bouclier = Competence("Bouclier", degats=0, portee=1, effet="blocage")
         baton_magique = Competence("Baton magique", degats=40, portee=4, effet="soin")
 
-        self.player_units[0].ajouter_competence(pistolet)  # Unité tueur
-        self.player_units[0].ajouter_competence(grenade)  # Unité tueur
-        self.player_units[1].ajouter_competence(pistolet)  # Unité tireur
-        self.player_units[1].ajouter_competence(dague)  # Unité tireur
-        self.player_units[2].ajouter_competence(pistolet)  # Unité sorcier
-        self.player_units[2].ajouter_competence(baton_magique)  # Unité sorcier
-        self.player_units[3].ajouter_competence(pistolet)  # Unité tank
-        self.player_units[3].ajouter_competence(bouclier)  # Unité tank
-       
-        self.enemy_units[0].ajouter_competence(pistolet)  # Unité tueur
-        self.enemy_units[0].ajouter_competence(grenade)  # Unité tueur
-        self.enemy_units[1].ajouter_competence(pistolet)  # Unité tireur
-        self.enemy_units[1].ajouter_competence(dague)  # Unité tireur
-        self.enemy_units[2].ajouter_competence(pistolet)  # Unité sorcier
-        self.enemy_units[2].ajouter_competence(baton_magique)  # Unité sorcier
-        self.enemy_units[3].ajouter_competence(pistolet)  # Unité tank
-        self.enemy_units[3].ajouter_competence(bouclier)  # Unité tank
-        
+        # Ajout de compétences aux unités du joueur
+        for unit in self.player_units:
+            if unit.nom == "tueur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(grenade)
+            elif unit.nom == "tireur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(dague)
+            elif unit.nom == "sorcier":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(baton_magique)
+            elif unit.nom == "tank":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(bouclier)
+
+        # Ajout de compétences aux ennemis
+        for unit in self.enemy_units:
+            if unit.nom == "tueur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(grenade)
+            elif unit.nom == "tireur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(dague)
+            elif unit.nom == "sorcier":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(baton_magique)
+            elif unit.nom == "tank":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(bouclier)
+
     def activer_bouclier(self, tank):
         """Active automatiquement l'effet Bouclier pour le Tank."""
         if "blocage" not in tank.etats:
@@ -313,27 +327,36 @@ class Game:
                         pygame.quit()
                         exit()
     def reinitialiser_jeu(self):
-        """Réinitialise le jeu en recréant les unités et réinitialisant l'état."""
+        """Réinitialise complètement le jeu en retournant au menu de sélection."""
+        # Appeler le menu de sélection pour recommencer
+        personnages, mode = afficher_menu_selection()
+    
+        # Mettre à jour les unités du joueur et le mode
+        self.mode = mode
+        self.current_background = self.backgrounds.get(self.mode, None)
+        if self.current_background:
+            self.current_background = pygame.transform.scale(self.current_background, (WIDTH, HEIGHT))
+    
+        # Réinitialiser les unités sélectionnées
         self.player_units = [
-            Unit(0, 0, 100, 2, 'player', 'tueur', 4, image_path="tueur.png"),
-            Unit(1, 0, 100, 2, 'player', 'tireur', 2, image_path="tireur.png"),
-            Unit(2, 0, 100, 2, 'player', 'sorcier', 4, image_path="sorcier.png"),
-            Unit(3, 0, 100, 2, 'player', 'tank', 4, image_path="tank.png")
-            ]
-        self.enemy_units = [
-            Unit(6, 6, 100, 1, 'enemy', 'tueur_enemy', 4, image_path="tueur_enemy.png"),
-            Unit(7, 6, 100, 1, 'enemy', 'tireur_enemy', 4, image_path="tireur_enemy.png"),
-            Unit(8, 6, 100, 1, 'enemy', 'sorcier_enemy', 4, image_path="sorcier_enemy.png"),
-            Unit(9, 6, 100, 1, 'enemy', 'tank_enemy', 4, image_path="tank_enemy.png")
+            Unit(0, i, 100, 2, 'player', char_name, 4, image_path=f"{char_name}.png")
+            for i, char_name in enumerate(personnages)
         ]
-         # Ajout des compétences aux unités
+    
+        # Réinitialiser les unités ennemies avec 3 personnages aléatoires
+        all_characters = ["tireur", "tueur", "tank", "sorcier"]
+        enemy_characters = random.sample(all_characters, 3)
+        self.enemy_units = [
+            Unit(7, i, 100, 1, 'enemy', char_name, 4, image_path=f"{char_name}_enemy.png")
+            for i, char_name in enumerate(enemy_characters)
+        ]
+    
+        # Réinitialiser les compétences
         self.ajouter_competences()
 
-        # Démarrer le tour des joueurs
-        self.handle_player_turn()
 
 
-
+ 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -341,15 +364,13 @@ def main():
 
     # Appeler le menu de sélection
     personnages, mode = afficher_menu_selection()
-    print(f"Mode sélectionné : {mode}")  # Vérifiez le mode sélectionné dans la console
 
     # Passer les choix au jeu
-    game = Game(screen, mode)
+    game = Game(screen, mode, personnages)  # Passer les personnages sélectionnés
 
     while True:
         game.handle_player_turn()
         game.handle_enemy_turn()
- 
 
 
 

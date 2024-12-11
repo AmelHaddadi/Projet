@@ -97,7 +97,7 @@ def afficher_menu_selection():
 
         elif step == "personnages":
             screen.blit(background_image, (0, 0))
-            afficher_texte("Choisissez 2 personnages", 300, 50)
+            afficher_texte("Choisissez 3 personnages", 300, 50)  # Texte modifié
             for personnage in personnages:
                 personnage.dessiner(screen, personnage.nom in selected_personnages)
 
@@ -127,17 +127,17 @@ def afficher_menu_selection():
                 if step == "personnages":
                     for personnage in personnages:
                         px, py = personnage.position
-                        if px < x < px + 150 and py < y < py + 150:
+                        if px < x < px + 150 and py < y < py + 150:  # Vérifie si un personnage est cliqué
                             if click_sound:
                                 click_sound.play()
                             if personnage.nom in selected_personnages:
-                                selected_personnages.remove(personnage.nom)
-                            elif len(selected_personnages) < 2:
+                                selected_personnages.remove(personnage.nom)  # Dé-sélectionner un personnage
+                            elif len(selected_personnages) < 3:  # Limiter à 3 personnages
                                 selected_personnages.append(personnage.nom)
 
-                    if len(set(selected_personnages)) == 2:
+                # Si 3 personnages sont sélectionnés, passez à l'étape des modes
+                    if len(set(selected_personnages)) == 3:
                         step = "modes"
-
                 elif step == "modes":
                     for mode in modes:
                         px, py = mode.position
