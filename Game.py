@@ -43,7 +43,7 @@ class Game:
         self.enemy_units = [Unit(6, 6, 100, 1, 'enemy', 'tueur_enemy', 4,image_path="tueur_enemy.png"),
                             Unit(7, 6, 100, 1, 'enemy', 'tireur_enemy', 4,image_path="tireur_enemy.png"),
                             Unit(8, 6, 100, 1, 'enemy', 'sorcier_enemy', 4,image_path="sorcier_enemy.png"),
-                            Unit(9, 6, 100, 1, 'enemy', 'tank_enemy', 4,image_path="tank_enemy.png")]
+                            Unit(7, 7, 100, 1, 'enemy', 'tank_enemy', 4,image_path="tank_enemy.png")]
 
         # Initialisation des gestionnaires
         colors = {'white': WHITE, 'black': BLACK, 'red': RED, 'green': GREEN, 'blue': BLUE}
@@ -298,7 +298,7 @@ class Game:
             Unit(6, 6, 100, 1, 'enemy', 'tueur_enemy', 4, image_path="tueur_enemy.png"),
             Unit(7, 6, 100, 1, 'enemy', 'tireur_enemy', 4, image_path="tireur_enemy.png"),
             Unit(8, 6, 100, 1, 'enemy', 'sorcier_enemy', 4, image_path="sorcier_enemy.png"),
-            Unit(9, 6, 100, 1, 'enemy', 'tank_enemy', 4, image_path="tank_enemy.png")
+            Unit(7, 7, 100, 1, 'enemy', 'tank_enemy', 4, image_path="tank_enemy.png")
         ]
          # Ajout des compétences aux unités
         self.ajouter_competences()
