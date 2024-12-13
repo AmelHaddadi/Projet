@@ -125,7 +125,7 @@ class Game:
         print(f"Compétence sélectionnée : {competence.nom}")  # Debug
 
         # Déterminer les cibles valides
-        if competence.effet == "soin":
+        if competence.effet == "soin":      #Cette compétence ne peut etre appliquée que sur les coéquipiers : baton magique
             cibles = [unit for unit in self.player_units if unit != selected_unit]
         else:
             cibles = self.enemy_units
@@ -144,7 +144,7 @@ class Game:
 
         self.competence_manager.utiliser_competence(competence, selected_unit, cible)
 
-        # Ajouter ici l'appel au son d'explosion si la compétence est "Boule de Feu"
+        # Ajout du son de l'explosion lorsqu'il s'agit de l'utilisation de grenade
         if competence.nom == "grenade" and explosion_sound:
             explosion_sound.play()  # Joue le son d'explosion
 
