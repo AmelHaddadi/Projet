@@ -32,8 +32,8 @@ class Unit:
 
 
     def move(self, dx, dy):
-        """Déplace l'unité de dx, dy."""
-        if abs(dx) + abs(dy) > self.vitesse:
+        """Déplace l'unité de dx, dy en respectant sa vitesse."""
+        if abs(dx) > self.vitesse or abs(dy) > self.vitesse:
             print(f"{self.nom} ne peut pas se déplacer de plus de {self.vitesse} cases par tour.")
             return
 

@@ -48,8 +48,15 @@ class Game:
 
         self.font = pygame.font.Font(None, 36)
          # Initialisation des unités pour le joueur
+        CHARACTER_SPEEDS = {
+        "tireur": 1,
+        "tueur": 2,
+        "tank": 2,
+        "sorcier": 1,
+        }
+
         self.player_units = [
-            Unit(0, i, 100, 2, 'player', char_name, 4, image_path=f"{char_name}.png")
+            Unit(0, i, 100, 2, 'player', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
             for i, char_name in enumerate(selected_characters)
         ]
 
@@ -57,7 +64,7 @@ class Game:
         all_characters = ["tireur", "tueur", "tank", "sorcier"]
         enemy_characters = random.sample(all_characters, 3)
         self.enemy_units = [
-            Unit(7, i, 100, 1, 'enemy', char_name, 4, image_path=f"{char_name}_enemy.png")
+            Unit(7, i, 100, 1, 'enemy', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
             for i, char_name in enumerate(enemy_characters)
         ]
 
@@ -158,10 +165,11 @@ class Game:
         self.check_end_game()
         return True
     def handle_player_turn(self):
+        print("Tour des joueurs")  # Debug
         for selected_unit in self.player_units:
             has_acted = False
             selected_unit.is_selected = True
-            self.flip_display(active_unit=selected_unit)  # Mettre en évidence l'unité active
+            self.flip_display(active_unit=selected_unit)
 
             while not has_acted:
                 for event in pygame.event.get():
@@ -170,38 +178,50 @@ class Game:
                         exit()
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_c:
-                            # Tenter d'utiliser une compétence
                             action_result = self.utiliser_competence(selected_unit)
-                            if action_result:  # Si une compétence a été utilisée, terminer l'action
+                            if action_result:
                                 has_acted = True
                                 selected_unit.is_selected = False
-                                self.check_end_game()
                         elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
-                            # Déplacement de l'unité
                             dx, dy = 0, 0
                             if event.key == pygame.K_LEFT:
-                                dx = -1
+                                dx = -selected_unit.vitesse
                             elif event.key == pygame.K_RIGHT:
-                                dx = 1
+                                dx = selected_unit.vitesse
                             elif event.key == pygame.K_UP:
-                                dy = -1
+                                dy = -selected_unit.vitesse
                             elif event.key == pygame.K_DOWN:
-                                dy = 1
-                            selected_unit.move(dx, dy)
-                            self.flip_display(active_unit=selected_unit)  # Mettre à jour l'affichage
-                            has_acted = True  # Fin de l'action
-                            self.check_end_game()
+                                dy = selected_unit.vitesse
+
+                            # Vérification du déplacement
+                            if abs(dx) > selected_unit.vitesse or abs(dy) > selected_unit.vitesse:
+                                print(f"{selected_unit.nom} ne peut pas se déplacer de plus de {selected_unit.vitesse} cases par tour.")
+                            else:
+                                selected_unit.move(dx, dy)
+                                self.flip_display(active_unit=selected_unit)
+                                has_acted = True
+
+            # Marquez la fin de l'action de cette unité
+            selected_unit.is_selected = False
+
+
 
     def handle_enemy_turn(self):
         """Tour des ennemis."""
+        print("Début du tour des ennemis") 
         for enemy in self.enemy_units:
             #Verifier si le jeu est terminé
             self.check_end_game()
             target = random.choice(self.player_units)
-            dx, dy = (1 if enemy.x < target.x else -1 if enemy.x > target.x else 0,
-                      1 if enemy.y < target.y else -1 if enemy.y > target.y else 0)
-            enemy.move(dx, dy)
+            dx = (1 if enemy.x < target.x else -1 if enemy.x > target.x else 0)
+            dy = (1 if enemy.y < target.y else -1 if enemy.y > target.y else 0)
 
+            # Limiter le déplacement par la vitesse de l'ennemi
+            dx = max(-enemy.vitesse, min(dx, enemy.vitesse))
+            dy = max(-enemy.vitesse, min(dy, enemy.vitesse))
+
+            # Déplacer l'ennemi
+            enemy.move(dx, dy)
             # Utiliser une compétence ou attaquer
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                 competence = random.choice(enemy.competences) if enemy.competences else None
@@ -329,8 +349,14 @@ class Game:
             self.current_background = pygame.transform.scale(self.current_background, (WIDTH, HEIGHT))
     
         # Réinitialiser les unités sélectionnées
+        CHARACTER_SPEEDS = {
+        "tireur": 1,
+        "tueur": 2,
+        "tank": 2,
+        "sorcier": 1,
+        }
         self.player_units = [
-            Unit(0, i, 100, 2, 'player', char_name, 4, image_path=f"{char_name}.png")
+            Unit(0, i, 100, 2, 'player', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
             for i, char_name in enumerate(personnages)
         ]
     
@@ -338,7 +364,7 @@ class Game:
         all_characters = ["tireur", "tueur", "tank", "sorcier"]
         enemy_characters = random.sample(all_characters, 3)
         self.enemy_units = [
-            Unit(7, i, 100, 1, 'enemy', char_name, 4, image_path=f"{char_name}_enemy.png")
+            Unit(7, i, 100, 1, 'enemy', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
             for i, char_name in enumerate(enemy_characters)
         ]
     
@@ -350,18 +376,17 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Mon jeu de stratégie")
 
-    # Appeler le menu de sélection
     personnages, mode = afficher_menu_selection()
+    game = Game(screen, mode, personnages)
 
-    # Passer les choix au jeu
-    game = Game(screen, mode, personnages)  # Passer les personnages sélectionnés
+    player_turn = True  # Alternance entre joueurs et ennemis
 
     while True:
-        game.handle_player_turn()
-        game.handle_enemy_turn()
+        if player_turn:
+            game.handle_player_turn()
+        else:
+            game.handle_enemy_turn()
 
-
-
+        player_turn = not player_turn  # Alterner les tours
 if __name__ == "__main__":
     main()
-

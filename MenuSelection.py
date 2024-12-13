@@ -49,8 +49,8 @@ class Entite:
 # Charger les personnages
 personnages = [
     Entite("tireur", pygame.image.load("tireur.png"), (100, 200),1),
-    Entite("tueur", pygame.image.load("tueur.png"), (300, 200),1),
-    Entite("tank", pygame.image.load("tank.png"), (500, 200),1),
+    Entite("tueur", pygame.image.load("tueur.png"), (300, 200),2),
+    Entite("tank", pygame.image.load("tank.png"), (500, 200),2),
     Entite("sorcier", pygame.image.load("sorcier.png"), (700, 200),1),
 ]
 

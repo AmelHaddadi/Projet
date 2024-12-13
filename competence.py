@@ -19,22 +19,12 @@ class Competence:
         elif self.effet == "explosion":
             cible.take_damage(self.degats)  # Inflige des dégâts à la cible
             cible.etats.append("explosé")  # Ajoute l'état "explosé"
-            #print(f"{cible.nom} a été victime d'une zone d'explosion et subit {self.degats} dégâts !")
         elif self.effet == "blessure":
             cible.take_damage(self.degats)  # Inflige des dégâts de blessure
             cible.etats.append("blessé")
-            #print(f"{cible.nom} a été blessé par le pistolet et subit {self.degats} dégâts !")
         elif self.effet == "saignement" :
             cible.take_damage(self.degats)
             cible.etats.append("saigne")
-            #print(f"{cible.nom} saigne et subit {self.degats} dégâts !")
-    
-        #elif self.effet == "blocage" :
-            #cible.take_damage(self.degats)
-            #cible.etats.append("bloqué")
-            #print(f"{cible.nom} active Blocage : réduction des dégâts de moitié!")
-    
-
         else:
             print(f"Aucun effet spécial pour {self.nom}.")
 
