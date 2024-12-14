@@ -1,182 +1,420 @@
 import pygame
 import random
-from competence import Competence  # Assurez-vous d'importer la classe Competence
+from unit import *
+from competence import Competence
+from AnimationManager import AnimationManager
+from CompetenceManager import CompetenceManager
+from MenuManager import MenuManager
+from MenuSelection import *
 
 # Constantes
-GRID_SIZE = 8
-CELL_SIZE = 60
-WIDTH = GRID_SIZE * CELL_SIZE
-HEIGHT = GRID_SIZE * CELL_SIZE
-FPS = 30
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-VISION_RANGE = 5
+WIDTH, HEIGHT = 1000, 700  # Dimensions de la fenêtre
+GRID_SIZE = 8  # Taille de la grille
+CELL_SIZE = 60  # Taille d'une cellule
+WHITE, BLACK, RED, GREEN, BLUE = (255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)
 
-class Unit:
-    def __init__(self, x, y, health, attack_power, team, nom="Unité", vitesse=1, etats=None, image_path=None, vision_range=VISION_RANGE):
-        self.x = x
-        self.y = y
-        self.health = health
-        self.attack_power = attack_power
-        self.team = team  # 'player' ou 'enemy'
-        self.nom = nom
-        self.vitesse = vitesse
-        self.is_selected = False
-        self.competences = []  # Liste des compétences de l'unité vide par défaut
-        self.etats = etats if etats else []  # Liste des états de l'unité 
+pygame.mixer.init()
 
-        self.vision_range = vision_range  # Plage de vision     ##############
+# Charger un son d'explosion
+try:
+     explosion_sound = pygame.mixer.Sound("explosion.wav")  
+except pygame.error as e:
+    print("Erreur lors du chargement du son :", e)
+    explosion_sound = None  # Si le son ne peut pas être chargé, on continue sans
+
+class Game:
+    """
+    Classe pour représenter le jeu.
+    """
+    def __init__(self, screen,mode,selected_characters):
+        """
+        Construit le jeu avec la surface de la fenêtre.
+
+        :param screen: Surface Pygame où le jeu est affiché.
+        """
+        self.screen = screen
+        self.mode = mode  # Mode sélectionné transmis
+        self.backgrounds = {
+            "air": pygame.image.load("air.png"),
+            "terre": pygame.image.load("terre.png"),
+            "feu": pygame.image.load("feu.png"),
+            "electricite": pygame.image.load("electricite.png"),
+        }
+        self.current_background = self.backgrounds.get(self.mode, None)
+        if self.current_background is not None:
+            self.current_background = pygame.transform.scale(self.current_background, (WIDTH, HEIGHT))
+        else:
+            print(f"Erreur : Aucun arrière-plan trouvé pour le mode {self.mode}")
+
+        self.font = pygame.font.Font(None, 36)
+         # Initialisation des unités pour le joueur
+        CHARACTER_SPEEDS = {
+        "tireur": 1,
+        "tueur": 2,
+        "tank": 2,
+        "sorcier": 1,
+        }
+
+        self.player_units = [
+            Unit(0, i, 100, 2, 'player', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
+            for i, char_name in enumerate(selected_characters)
+        ]
+
+        # Initialisation des unités ennemies avec 3 personnages aléatoires
+        all_characters = ["tireur", "tueur", "tank", "sorcier"]
+        enemy_characters = random.sample(all_characters, 3)
+        self.enemy_units = [
+            Unit(7, i, 100, 1, 'enemy', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
+            for i, char_name in enumerate(enemy_characters)
+        ]
+
+        # Initialisation des gestionnaires
+        colors = {'white': WHITE, 'black': BLACK, 'red': RED, 'green': GREEN, 'blue': BLUE}
+        dimensions = {'width': WIDTH, 'height': HEIGHT}
+        self.animation_manager = AnimationManager(screen, colors, dimensions, CELL_SIZE)
+        self.menu_manager = MenuManager(screen, self.font, colors, dimensions)
+
+        # Ajouter les compétences
+        self.ajouter_competences()
+         # Initialisation des gestionnaires
+        self.competence_manager = CompetenceManager()  # Initialisation de CompetenceManager
+        
+    def ajouter_competences(self):
+        """Ajoute des compétences aux unités sélectionnées et aux ennemis."""
+        # Définir des compétences communes
+        pistolet = Competence("Pistolet", degats=20, portee=5, effet="blessure")
+        grenade = Competence("Grenade", degats=50, portee=3, effet="explosion")
+        dague = Competence("Dague", degats=30, portee=1, effet="saignement")
+        baton_magique = Competence("Baton magique", degats=40, portee=4, effet="soin")
+
+        # Ajout de compétences aux unités du joueur
+        for unit in self.player_units:
+            if unit.nom == "tueur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(grenade)
+            elif unit.nom == "tireur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(dague)
+            elif unit.nom == "sorcier":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(baton_magique)
+            elif unit.nom == "tank":
+                unit.ajouter_competence(pistolet)
+                
+        # Ajout de compétences aux ennemis
+        for unit in self.enemy_units:
+            if unit.nom == "tueur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(grenade)
+            elif unit.nom == "tireur":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(dague)
+            elif unit.nom == "sorcier":
+                unit.ajouter_competence(pistolet)
+                unit.ajouter_competence(baton_magique)
+            elif unit.nom == "tank":
+                unit.ajouter_competence(pistolet)
+
+    def utiliser_competence(self, selected_unit):
+        """Permet au joueur d'utiliser une compétence."""
+        # Vérifier si l'unité a des compétences
+        if not selected_unit.competences:
+            print(f"{selected_unit.nom} n'a pas de compétences.")
+            return False
+
+        # Afficher le menu des compétences
+        competence = self.menu_manager.selectionner_competence(selected_unit.competences)
+        if not competence:  # Si le joueur annule
+            print("Action annulée.")
+            self.flip_display(active_unit=selected_unit)  # Réinitialiser l'affichage
+            return False
+
+        print(f"Compétence sélectionnée : {competence.nom}")  # Debug
+
+        # Déterminer les cibles valides
+        if competence.effet == "soin":      #Cette compétence ne peut etre appliquée que sur les coéquipiers : baton magique
+            cibles = [unit for unit in self.player_units if unit != selected_unit]
+        else:
+            cibles = self.enemy_units
+
+        # Afficher le menu des cibles
+        cible = self.menu_manager.afficher_menu_cibles(cibles)
+        if not cible:
+            print("Action annulée.")
+            return False
+
+        # Jouer l'animation et appliquer la compétence
+        if competence.effet == "soin":
+            self.animation_manager.animer_soin(cible.x, cible.y)
+        else:
+            self.animation_manager.animer_attaque(cible.x, cible.y)
+
+        self.competence_manager.utiliser_competence(competence, selected_unit, cible)
+
+        # Ajout du son de l'explosion lorsqu'il s'agit de l'utilisation de grenade
+        if competence.nom == "grenade" and explosion_sound:
+            explosion_sound.play()  # Joue le son d'explosion
+
+        # Vérifier si la cible est éliminée
+        if cible.health <= 0:
+            if cible.team == 'enemy':
+                self.enemy_units.remove(cible)
+            else:
+                self.player_units.remove(cible)
+        #Verifier si le jeu est terminé
+        self.check_end_game()
+        return True
+    def handle_player_turn(self):
+    #"""Tour du joueur."""
+        print("Tour des joueurs")  # Debug
+        for selected_unit in self.player_units:
+            has_acted = False
+            selected_unit.is_selected = True
+            self.flip_display(active_unit=selected_unit)
+
+            move_attempted = False  # Flag pour vérifier si un déplacement a eu lieu
+
+            while not has_acted:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_c:
+                            # Vérifier si l'ennemi est dans le champ de vision
+                            if selected_unit.est_dans_vision(self.enemy_units[0]):  # Assumer que l'ennemi est sélectionné
+                                action_result = self.utiliser_competence(selected_unit)
+                                if action_result:
+                                    has_acted = True
+                                    selected_unit.is_selected = False
+                            else:
+                                print(f"{selected_unit.nom} ne peut pas utiliser une compétence car l'ennemi n'est pas dans le champ de vision.")
+                                # Le joueur peut se déplacer encore une fois avant que le tour passe
+                                if not move_attempted:
+                                    print(f"{selected_unit.nom} peut se déplacer une fois.")
+                                    move_attempted = True  # Première tentative de déplacement
+                                else:
+                                    print(f"{selected_unit.nom} ne peut plus agir, le tour passe.")
+                                    has_acted = True  # Si le joueur a déjà tenté un déplacement, on passe le tour
+                                selected_unit.is_selected = False
+
+                        elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
+                            dx, dy = 0, 0
+                            if event.key == pygame.K_LEFT:
+                                dx = -selected_unit.vitesse
+                            elif event.key == pygame.K_RIGHT:
+                                dx = selected_unit.vitesse
+                            elif event.key == pygame.K_UP:
+                                dy = -selected_unit.vitesse
+                            elif event.key == pygame.K_DOWN:
+                                dy = selected_unit.vitesse
+
+                            # Vérification du déplacement
+                            if abs(dx) > selected_unit.vitesse or abs(dy) > selected_unit.vitesse:
+                                print(f"{selected_unit.nom} ne peut pas se déplacer de plus de {selected_unit.vitesse} cases par tour.")
+                            else:
+                                selected_unit.move(dx, dy, self.player_units + self.enemy_units)  # Vérifier l'occupation avec toutes les unités
+                                self.flip_display(active_unit=selected_unit)
+                                move_attempted = True  # Le joueur a effectué un déplacement
+                                has_acted = True  # Le tour peut passer après ce déplacement
+
+            # Marquez la fin de l'action de cette unité
+            selected_unit.is_selected = False
+
+
+
+
+
+    def handle_enemy_turn(self):
+        """Tour des ennemis."""
+        print("Début du tour des ennemis") 
+        for enemy in self.enemy_units:
+            #Verifier si le jeu est terminé
+            self.check_end_game()
+            target = random.choice(self.player_units)
+            dx = (1 if enemy.x < target.x else -1 if enemy.x > target.x else 0)
+            dy = (1 if enemy.y < target.y else -1 if enemy.y > target.y else 0)
+
+            # Limiter le déplacement par la vitesse de l'ennemi
+            dx = max(-enemy.vitesse, min(dx, enemy.vitesse))
+            dy = max(-enemy.vitesse, min(dy, enemy.vitesse))
+
+            # Déplacer l'ennemi
+            enemy.move(dx, dy, self.player_units + self.enemy_units)
+            # Utiliser une compétence ou attaquer
+            if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
+                competence = random.choice(enemy.competences) if enemy.competences else None
+                if competence:
+                    self.animation_manager.animer_attaque(target.x, target.y)
+                    self.competence_manager.utiliser_competence(competence, enemy, target)
+                else:
+                    enemy.attack(target)
+
+                # Supprimer l'unité si elle est vaincue
+                if target.health <= 0:
+                    self.player_units.remove(target)
+            self.flip_display()
+    def dessiner_grille(self):
+        """Dessine une grille sur l'écran."""
+        for x in range(0, WIDTH, CELL_SIZE):
+            pygame.draw.line(self.screen, (200, 200, 200), (x, 0), (x, HEIGHT), 1)  # Lignes verticales
+        for y in range(0, HEIGHT, CELL_SIZE):
+            pygame.draw.line(self.screen, (200, 200, 200), (0, y), (WIDTH, y), 1)  # Lignes horizontales
+
+    def flip_display(self, active_unit=None):
+        """Met à jour l'affichage du jeu, en mettant en évidence l'unité active."""
+        if self.current_background:
+            self.screen.blit(self.current_background, (0, 0))  # Dessiner l'arrière-plan
+        else:
+            self.screen.fill((0, 0, 0))  # Fond noir si aucun arrière-plan
+
+        self.dessiner_grille()  # Dessiner la grille
+
 
         
-        # Charger l'image si un chemin est fourni
-        self.image = pygame.image.load(image_path) if image_path else None
 
-    def is_occupied(self, units, x, y):
-    #"""Vérifie si la case (x, y) est déjà occupée par une autre unité."""
-        for unit in units:
-            if unit.x == x and unit.y == y:
-                return True  # La case est occupée
-        return False  # La case n'est pas occupée
-
-    def move(self, dx, dy, units):
-    #"""Déplace l'unité de dx, dy en respectant sa vitesse et en vérifiant si la case est libre."""
-        if abs(dx) > self.vitesse or abs(dy) > self.vitesse:
-            print(f"{self.nom} ne peut pas se déplacer de plus de {self.vitesse} cases par tour.")
-            return
-
-        new_x, new_y = self.x + dx, self.y + dy
-
-        # Vérifier si la case est occupée
-        if self.is_occupied(units, new_x, new_y):
-            print(f"Case occupée par une autre unité. {self.nom} ne peut pas se déplacer vers ({new_x}, {new_y}).")
-            
-            # Essayer une autre direction
-            for new_dx, new_dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Essayer gauche, droite, haut, bas
-                alternative_x, alternative_y = self.x + new_dx, self.y + new_dy
-                # Vérifier si la nouvelle direction est libre
-                if not self.is_occupied(units, alternative_x, alternative_y) and 0 <= alternative_x < GRID_SIZE and 0 <= alternative_y < GRID_SIZE:
-                    self.x = alternative_x
-                    self.y = alternative_y
-                    print(f"{self.nom} se déplace vers ({self.x}, {self.y}) après avoir évité la case occupée.")
-                    return  # Déplacement réussi, sortir de la fonction
-
-            print(f"Aucune direction libre pour {self.nom}, déplacement annulé.")  # Si aucune case libre n'est trouvée
-            return
-
-        # Vérifier si la nouvelle position est dans les limites de la grille
-        if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
-            self.x = new_x
-            self.y = new_y
-            print(f"{self.nom} s'est déplacé vers ({self.x}, {self.y}).")
-        else:
-            print(f"{self.nom} ne peut pas sortir de la grille (position : {self.x}, {self.y}).")
-
-
-            
-    def attack(self, target):
-        """Attaque une unité cible."""
-        if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.take_damage(self.attack_power)
+        # Dessiner les unités et leur champ de vision uniquement pour l'unité active
+        for unit in self.player_units + self.enemy_units:
+            # Afficher le champ de vision uniquement pour l'unité active
+            if unit == active_unit:
+                unit.draw_vision(self.screen)  # Dessiner le champ de vision de l'unité active
+            is_active = (unit == active_unit)  # Marquer l'unité active
+            unit.draw(self.screen, is_active=is_active)  # Dessiner l'unité
 
 
 
-    def draw_vision(self, screen):
-        """Dessine le champ de vision de l'unité (cercle autour de l'unité)."""
-        for dx in range(-self.vision_range, self.vision_range + 1):
-            for dy in range(-self.vision_range, self.vision_range + 1):
-                distance = abs(dx) + abs(dy)
-                if distance <= self.vision_range:
-                    # Convertir la position de la grille en pixels
-                    vision_x = self.x + dx
-                    vision_y = self.y + dy
-                    if 0 <= vision_x < GRID_SIZE and 0 <= vision_y < GRID_SIZE:
-                        # Dessiner le champ de vision
-                        pygame.draw.rect(screen, (0, 255, 0),  # Couleur cyan pour le champ de vision
-                                         pygame.Rect(vision_x * CELL_SIZE, vision_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
+        pygame.display.flip()
 
 
+
+
+    def check_end_game(self):
+
+        """Vérifie si le jeu est terminé (victoire ou défaite)."""
+        if not self.enemy_units:  # Si tous les ennemis sont éliminés
+            action = self.afficher_interface_fin("victoire")
+            if action == "rejouer":
+                self.reinitialiser_jeu()
+        elif not self.player_units:  # Si tous les joueurs sont éliminés
+            action = self.afficher_interface_fin("echec")
+            if action == "rejouer":
+                self.reinitialiser_jeu()
+
+    def afficher_message_fin(self, message):
+        """Affiche un message de fin du jeu (Victoire ou Défaite)."""
+        self.screen.fill((0, 0, 0))  # Fond noir
+        font = pygame.font.Font(None, 72)  # Police plus grande pour le message
+        texte = font.render(message, True, (255, 255, 255))  # Texte blanc
+        texte_rect = texte.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+        self.screen.blit(texte, texte_rect)
+        pygame.display.flip()
+        pygame.time.wait(3000)  # Attendre 3 secondes avant de fermer
+
+    def afficher_interface_fin(self, resultat):
+        """
+        Affiche l'interface de fin avec un bouton pour rejouer ou quitter.
+        :param resultat: "victoire" ou "echec"
+        """
+        # Charger l'image correspondante
+        image_path = "victoire.png" if resultat == "victoire" else "defaite.png"
+        image = pygame.image.load(image_path)
+        image = pygame.transform.scale(image, (self.screen.get_width(), self.screen.get_height()))
     
+        # Boucle pour l'interface de fin
+        while True:
+            self.screen.blit(image, (0, 0))
 
-    def draw(self, screen, is_active=False):
-        """Affiche l'unité avec son image sur l'écran, et ajoute un contour si l'unité est active."""
-        # Dessiner un contour si l'unité est active
-        if is_active:
-            pygame.draw.rect(
-                screen,
-                (255, 255, 0),  # Couleur jaune pour l'unité active
-                (self.x * CELL_SIZE - 2, self.y * CELL_SIZE - 2, CELL_SIZE + 4, CELL_SIZE + 4),  # Contour autour de l'image
+            # Afficher les boutons
+            font = pygame.font.Font(None, 50)
+            rejouer_texte = font.render("Rejouer", True, (255, 255, 255))
+            quitter_texte = font.render("Quitter", True, (255, 255, 255))
+
+            # Dimensions des boutons
+            button_width, button_height = 200, 50
+            replay_button_rect = pygame.Rect(
+                self.screen.get_width() // 2 - button_width // 2,
+                self.screen.get_height() // 2,
+                button_width,
+                button_height
+            )
+            quit_button_rect = pygame.Rect(
+                self.screen.get_width() // 2 - button_width // 2,
+                self.screen.get_height() // 2 + 70,
+                button_width,
+                button_height
             )
 
-        # Afficher l'image de l'unité
-        if self.image:
-            image_resized = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))
-            screen.blit(image_resized, (self.x * CELL_SIZE, self.y * CELL_SIZE))
-        else:
-            color = (0, 0, 255) if self.team == 'player' else (255, 0, 0)
-            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+            # Dessiner les boutons
+            pygame.draw.rect(self.screen, (0, 128, 0), replay_button_rect)
+            pygame.draw.rect(self.screen, (128, 0, 0), quit_button_rect)
 
-        # Afficher la barre de santé
-        pygame.draw.rect(screen, (255, 0, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, CELL_SIZE, 5))
-        current_health_width = int(CELL_SIZE * self.health / 100)
-        pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, current_health_width, 5))
+            self.screen.blit(rejouer_texte, (replay_button_rect.x + 50, replay_button_rect.y + 10))
+            self.screen.blit(quitter_texte, (quit_button_rect.x + 50, quit_button_rect.y + 10))
 
+            pygame.display.flip()
 
-    def est_dans_vision(self, cible):
-    #"""Vérifie si l'ennemi est dans le champ de vision de l'unité."""
-        distance = abs(self.x - cible.x) + abs(self.y - cible.y)
-        return distance <= self.vision_range  # La portée de vision détermine la visibilité
-
-
-
-
-
-    def take_damage(self, amount):
-        """Réduit les dégâts reçus si la cible est un Tank."""
-        if "tank" in self.nom.lower():  # Vérifie si l'unité est un Tank
-            amount //= 2  # Réduction de moitié
-            print(f"{self.nom} subit des dégâts réduits à {amount}.")
-
-        self.health -= amount
-        if self.health <= 0:
-            self.health = 0
-            print(f"{self.nom} est mort.")
-        else:
-            print(f"{self.nom} subit {amount} dégâts, santé actuelle : {self.health}.")
-
-
-
-    def heal(self, amount):
-        """Soigne l'unité en ajoutant des points de vie."""
-        self.health += amount
-        if self.health > 100:
-            self.health = 100
-        print(f"{self.nom} a été soigné de {amount} PV. Santé actuelle : {self.health} PV.")
-
-    def ajouter_competence(self, competence):
-        """Ajoute une compétence à l'unité."""
-        self.competences.append(competence)
-
-    def utiliser_competence(self, competence, utilisateur, cible):
-        """Utilise une compétence spécifique sur une cible."""
-        # Vérifier si la compétence est passive
-        if competence.utiliser(utilisateur, cible):
-            self.log.append((utilisateur.nom, competence.nom, cible.nom, "Succès"))
-            if cible.health <= 0:
-                print(f"{cible.nom} a été vaincu !")
-        else:
-            self.log.append((utilisateur.nom, competence.nom, cible.nom, "Échec"))
-
-
-
+            # Gestion des événements
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if replay_button_rect.collidepoint(event.pos):
+                        return "rejouer"
+                    elif quit_button_rect.collidepoint(event.pos):
+                        pygame.quit()
+                        exit()
+    def reinitialiser_jeu(self):
+        """Réinitialise complètement le jeu en retournant au menu de sélection."""
+        # Appeler le menu de sélection pour recommencer
+        personnages, mode = afficher_menu_selection()
     
+        # Mettre à jour les unités du joueur et le mode
+        self.mode = mode
+        self.current_background = self.backgrounds.get(self.mode, None)
+        if self.current_background:
+            self.current_background = pygame.transform.scale(self.current_background, (WIDTH, HEIGHT))
+    
+        # Réinitialiser les unités sélectionnées
+        CHARACTER_SPEEDS = {
+        "tireur": 1,
+        "tueur": 2,
+        "tank": 2,
+        "sorcier": 1,
+        }
+        self.player_units = [
+            Unit(0, i, 100, 2, 'player', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
+            for i, char_name in enumerate(personnages)
+        ]
+    
+        # Réinitialiser les unités ennemies avec 3 personnages aléatoires
+        all_characters = ["tireur", "tueur", "tank", "sorcier"]
+        enemy_characters = random.sample(all_characters, 3)
+        self.enemy_units = [
+            Unit(7, i, 100, 1, 'enemy', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
+            for i, char_name in enumerate(enemy_characters)
+        ]
+    
+        # Réinitialiser les compétences
+        self.ajouter_competences()
 
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Mon jeu de stratégie")
 
+    personnages, mode = afficher_menu_selection()
+    game = Game(screen, mode, personnages)
 
+    player_turn = True  # Alternance entre joueurs et ennemis
 
+    while True:
+        if player_turn:
+            game.handle_player_turn()
+        else:
+            game.handle_enemy_turn()
 
-
-
-
+        player_turn = not player_turn  # Alterner les tours
+if __name__ == "__main__":
+    main()
