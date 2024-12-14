@@ -30,15 +30,23 @@ class Competence:
             print(" ")
 
     def utiliser(self, lanceur, cible):
-        """Utilise la compétence sur une cible."""
+    #"""Utilise la compétence sur une cible."""
+        # Vérifier si la cible est dans le champ de vision du lanceur
+        if not lanceur.est_dans_vision(cible):  # L'ennemi doit être dans le champ de vision pour utiliser la compétence
+            print(f"{cible.nom} n'est pas dans le champ de vision de {lanceur.nom}. Vous ne pouvez pas utiliser cette compétence.")
+            return False
+
+        # Vérifier la portée de la compétence
         if not self.est_a_portee(lanceur, cible):
             print(f"{self.nom} est hors de portée.")
             return False
+
         # Appliquer les effets si définis
         if self.effet:
             self.appliquer_effet(cible)
         else:  # Infliger les dégâts uniquement si aucun effet de type soin ou passif
             cible.take_damage(self.degats)
-            #print(f"{lanceur.nom} utilise {self.nom} sur {cible.nom}, infligeant {self.degats} dégâts !")
+            print(f"{lanceur.nom} utilise {self.nom} sur {cible.nom}, infligeant {self.degats} dégâts !")
 
         return True
+

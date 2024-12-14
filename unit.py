@@ -34,21 +34,46 @@ class Unit:
         # Charger l'image si un chemin est fourni
         self.image = pygame.image.load(image_path) if image_path else None
 
+    def is_occupied(self, units, x, y):
+    #"""Vérifie si la case (x, y) est déjà occupée par une autre unité."""
+        for unit in units:
+            if unit.x == x and unit.y == y:
+                return True  # La case est occupée
+        return False  # La case n'est pas occupée
 
-
-    def move(self, dx, dy):
-        """Déplace l'unité de dx, dy en respectant sa vitesse."""
+    def move(self, dx, dy, units):
+    #"""Déplace l'unité de dx, dy en respectant sa vitesse et en vérifiant si la case est libre."""
         if abs(dx) > self.vitesse or abs(dy) > self.vitesse:
             print(f"{self.nom} ne peut pas se déplacer de plus de {self.vitesse} cases par tour.")
             return
 
         new_x, new_y = self.x + dx, self.y + dy
+
+        # Vérifier si la case est occupée
+        if self.is_occupied(units, new_x, new_y):
+            print(f"Case occupée par une autre unité. {self.nom} ne peut pas se déplacer vers ({new_x}, {new_y}).")
+            
+            # Essayer une autre direction
+            for new_dx, new_dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Essayer gauche, droite, haut, bas
+                alternative_x, alternative_y = self.x + new_dx, self.y + new_dy
+                # Vérifier si la nouvelle direction est libre
+                if not self.is_occupied(units, alternative_x, alternative_y) and 0 <= alternative_x < GRID_SIZE and 0 <= alternative_y < GRID_SIZE:
+                    self.x = alternative_x
+                    self.y = alternative_y
+                    print(f"{self.nom} se déplace vers ({self.x}, {self.y}) après avoir évité la case occupée.")
+                    return  # Déplacement réussi, sortir de la fonction
+
+            print(f"Aucune direction libre pour {self.nom}, déplacement annulé.")  # Si aucune case libre n'est trouvée
+            return
+
+        # Vérifier si la nouvelle position est dans les limites de la grille
         if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
             self.x = new_x
             self.y = new_y
             print(f"{self.nom} s'est déplacé vers ({self.x}, {self.y}).")
         else:
             print(f"{self.nom} ne peut pas sortir de la grille (position : {self.x}, {self.y}).")
+
 
             
     def attack(self, target):
@@ -99,6 +124,10 @@ class Unit:
         pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, current_health_width, 5))
 
 
+    def est_dans_vision(self, cible):
+    #"""Vérifie si l'ennemi est dans le champ de vision de l'unité."""
+        distance = abs(self.x - cible.x) + abs(self.y - cible.y)
+        return distance <= self.vision_range  # La portée de vision détermine la visibilité
 
 
 

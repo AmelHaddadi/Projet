@@ -165,23 +165,40 @@ class Game:
         self.check_end_game()
         return True
     def handle_player_turn(self):
+    #"""Tour du joueur."""
         print("Tour des joueurs")  # Debug
         for selected_unit in self.player_units:
             has_acted = False
             selected_unit.is_selected = True
             self.flip_display(active_unit=selected_unit)
 
+            move_attempted = False  # Flag pour vérifier si un déplacement a eu lieu
+
             while not has_acted:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
+
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_c:
-                            action_result = self.utiliser_competence(selected_unit)
-                            if action_result:
-                                has_acted = True
+                            # Vérifier si l'ennemi est dans le champ de vision
+                            if selected_unit.est_dans_vision(self.enemy_units[0]):  # Assumer que l'ennemi est sélectionné
+                                action_result = self.utiliser_competence(selected_unit)
+                                if action_result:
+                                    has_acted = True
+                                    selected_unit.is_selected = False
+                            else:
+                                print(f"{selected_unit.nom} ne peut pas utiliser une compétence car l'ennemi n'est pas dans le champ de vision.")
+                                # Le joueur peut se déplacer encore une fois avant que le tour passe
+                                if not move_attempted:
+                                    print(f"{selected_unit.nom} peut se déplacer une fois.")
+                                    move_attempted = True  # Première tentative de déplacement
+                                else:
+                                    print(f"{selected_unit.nom} ne peut plus agir, le tour passe.")
+                                    has_acted = True  # Si le joueur a déjà tenté un déplacement, on passe le tour
                                 selected_unit.is_selected = False
+
                         elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
                             dx, dy = 0, 0
                             if event.key == pygame.K_LEFT:
@@ -197,12 +214,15 @@ class Game:
                             if abs(dx) > selected_unit.vitesse or abs(dy) > selected_unit.vitesse:
                                 print(f"{selected_unit.nom} ne peut pas se déplacer de plus de {selected_unit.vitesse} cases par tour.")
                             else:
-                                selected_unit.move(dx, dy)
+                                selected_unit.move(dx, dy, self.player_units + self.enemy_units)  # Vérifier l'occupation avec toutes les unités
                                 self.flip_display(active_unit=selected_unit)
-                                has_acted = True
+                                move_attempted = True  # Le joueur a effectué un déplacement
+                                has_acted = True  # Le tour peut passer après ce déplacement
 
             # Marquez la fin de l'action de cette unité
             selected_unit.is_selected = False
+
+
 
 
 
@@ -221,7 +241,7 @@ class Game:
             dy = max(-enemy.vitesse, min(dy, enemy.vitesse))
 
             # Déplacer l'ennemi
-            enemy.move(dx, dy)
+            enemy.move(dx, dy, self.player_units + self.enemy_units)
             # Utiliser une compétence ou attaquer
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                 competence = random.choice(enemy.competences) if enemy.competences else None
