@@ -27,6 +27,7 @@ class Competence:
             cible.etats.append("saigne")
         else:
             print(f"Aucun effet spécial pour {self.nom}.")
+            print(" ")
 
     def utiliser(self, lanceur, cible):
         """Utilise la compétence sur une cible."""
