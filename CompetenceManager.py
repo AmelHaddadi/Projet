@@ -4,6 +4,7 @@ class CompetenceManager:
     def __init__(self):
         self.log = []  # Historique des compétences utilisées
 
+<<<<<<< HEAD
     def utiliser_competence(self, competence, utilisateur, cible, mode=None):
         """Utilise une compétence spécifique sur une cible en tenant compte du mode."""
         distance = abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y)
@@ -40,9 +41,23 @@ class CompetenceManager:
             print(f"{cible.nom} a été vaincu !")
             return True
         return False
+=======
+    def utiliser_competence(self, competence, utilisateur, cible):
+        """Utilise une compétence spécifique sur une cible."""
+        # Appeler la méthode 'utiliser' de la compétence
+        if competence.utiliser(utilisateur, cible):
+            self.log.append((utilisateur.nom, competence.nom, cible.nom, "Succès"))
+            if cible.health <= 0:
+                print(f"{cible.nom} a été vaincu !")
+        else:
+            self.log.append((utilisateur.nom, competence.nom, cible.nom, "Échec"))
+>>>>>>> dbbbd56bb20d67d6265dcc0117d7eef442485579
 
     def afficher_log(self):
         """Affiche l'historique des compétences utilisées."""
         for action in self.log:
             print(f"{action[0]} a utilisé {action[1]} sur {action[2]} : {action[3]}")
+<<<<<<< HEAD
 
+=======
+>>>>>>> dbbbd56bb20d67d6265dcc0117d7eef442485579

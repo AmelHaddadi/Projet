@@ -88,6 +88,7 @@ class AnimationManager:
         pygame.draw.rect(self.screen, self.colors['white'], rect)
         pygame.display.flip()
 
+<<<<<<< HEAD
     def animer_buff(self, x, y):
         """
         Anime un buff visuel (par exemple, des flèches montantes autour de l'unité).
@@ -108,3 +109,5 @@ class AnimationManager:
         rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
         pygame.draw.rect(self.screen, self.colors['white'], rect)
         pygame.display.flip()
+=======
+>>>>>>> dbbbd56bb20d67d6265dcc0117d7eef442485579

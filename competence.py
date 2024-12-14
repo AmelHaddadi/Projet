@@ -15,6 +15,7 @@ class Competence:
         """Applique l'effet spécial de la compétence à la cible."""
         if self.effet == "soin":
             cible.heal(self.degats)  # Soigne la cible en fonction des dégâts
+<<<<<<< HEAD
             print(f"{cible.nom} a été soigné de {self.degats} PV !")
         elif self.effet == "poison":
             cible.take_damage(self.degats)  # Inflige des dégâts à la cible
@@ -24,6 +25,18 @@ class Competence:
             cible.take_damage(self.degats)  # Inflige des dégâts de brûlure
             cible.etats.append("brûlé")
             print(f"{cible.nom} a été brûlé et subit {self.degats} dégâts !")
+=======
+            #print(f"{cible.nom} a été soigné de {self.degats} PV !")
+        elif self.effet == "explosion":
+            cible.take_damage(self.degats)  # Inflige des dégâts à la cible
+            cible.etats.append("explosé")  # Ajoute l'état "explosé"
+        elif self.effet == "blessure":
+            cible.take_damage(self.degats)  # Inflige des dégâts de blessure
+            cible.etats.append("blessé")
+        elif self.effet == "saignement" :
+            cible.take_damage(self.degats)
+            cible.etats.append("saigne")
+>>>>>>> dbbbd56bb20d67d6265dcc0117d7eef442485579
         else:
             print(f"Aucun effet spécial pour {self.nom}.")
 
@@ -32,6 +45,7 @@ class Competence:
         if not self.est_a_portee(lanceur, cible):
             print(f"{self.nom} est hors de portée.")
             return False
+<<<<<<< HEAD
 
         # Appliquer les effets de la compétence
         if self.effet:
@@ -88,3 +102,13 @@ def obtenir_competences(personnages, mode):
     competences["mode"].append(competences_modes[mode])
 
     return competences
+=======
+        # Appliquer les effets si définis
+        if self.effet:
+            self.appliquer_effet(cible)
+        else:  # Infliger les dégâts uniquement si aucun effet de type soin ou passif
+            cible.take_damage(self.degats)
+            #print(f"{lanceur.nom} utilise {self.nom} sur {cible.nom}, infligeant {self.degats} dégâts !")
+
+        return True
+>>>>>>> dbbbd56bb20d67d6265dcc0117d7eef442485579
