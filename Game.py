@@ -251,10 +251,18 @@ class Game:
 
         self.dessiner_grille()  # Dessiner la grille
 
-        # Afficher toutes les unités
+
+        
+
+        # Dessiner les unités et leur champ de vision uniquement pour l'unité active
         for unit in self.player_units + self.enemy_units:
-            is_active = (unit == active_unit)  # L'unité active est celle en cours de jeu
-            unit.draw(self.screen, is_active=is_active)
+            # Afficher le champ de vision uniquement pour l'unité active
+            if unit == active_unit:
+                unit.draw_vision(self.screen)  # Dessiner le champ de vision de l'unité active
+            is_active = (unit == active_unit)  # Marquer l'unité active
+            unit.draw(self.screen, is_active=is_active)  # Dessiner l'unité
+
+
 
         pygame.display.flip()
 

@@ -88,26 +88,3 @@ class AnimationManager:
         pygame.draw.rect(self.screen, self.colors['white'], rect)
         pygame.display.flip()
 
-<<<<<<< HEAD
-    def animer_buff(self, x, y):
-        """
-        Anime un buff visuel (par exemple, des flèches montantes autour de l'unité).
-
-        :param x: Coordonnée x de l'unité.
-        :param y: Coordonnée y de l'unité.
-        """
-        for i in range(5):
-            pygame.draw.polygon(self.screen, self.colors['blue'], [
-                (x * self.cell_size + self.cell_size // 2, y * self.cell_size - i * 5),
-                (x * self.cell_size + self.cell_size // 4, y * self.cell_size - i * 10),
-                (x * self.cell_size + 3 * self.cell_size // 4, y * self.cell_size - i * 10),
-            ])
-            pygame.display.flip()
-            pygame.time.delay(100)
-
-        # Effacer la zone après l'animation
-        rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
-        pygame.draw.rect(self.screen, self.colors['white'], rect)
-        pygame.display.flip()
-=======
->>>>>>> dbbbd56bb20d67d6265dcc0117d7eef442485579

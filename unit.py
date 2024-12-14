@@ -13,9 +13,10 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
+VISION_RANGE = 5
 
 class Unit:
-    def __init__(self, x, y, health, attack_power, team, nom="Unité", vitesse=1, etats=None, image_path=None):
+    def __init__(self, x, y, health, attack_power, team, nom="Unité", vitesse=1, etats=None, image_path=None, vision_range=VISION_RANGE):
         self.x = x
         self.y = y
         self.health = health
@@ -26,9 +27,13 @@ class Unit:
         self.is_selected = False
         self.competences = []  # Liste des compétences de l'unité vide par défaut
         self.etats = etats if etats else []  # Liste des états de l'unité 
+
+        self.vision_range = vision_range  # Plage de vision     ##############
+
         
         # Charger l'image si un chemin est fourni
         self.image = pygame.image.load(image_path) if image_path else None
+
 
 
     def move(self, dx, dy):
@@ -51,6 +56,25 @@ class Unit:
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
             target.take_damage(self.attack_power)
 
+
+
+    def draw_vision(self, screen):
+        """Dessine le champ de vision de l'unité (cercle autour de l'unité)."""
+        for dx in range(-self.vision_range, self.vision_range + 1):
+            for dy in range(-self.vision_range, self.vision_range + 1):
+                distance = abs(dx) + abs(dy)
+                if distance <= self.vision_range:
+                    # Convertir la position de la grille en pixels
+                    vision_x = self.x + dx
+                    vision_y = self.y + dy
+                    if 0 <= vision_x < GRID_SIZE and 0 <= vision_y < GRID_SIZE:
+                        # Dessiner le champ de vision
+                        pygame.draw.rect(screen, (0, 255, 0),  # Couleur cyan pour le champ de vision
+                                         pygame.Rect(vision_x * CELL_SIZE, vision_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
+
+
+    
+
     def draw(self, screen, is_active=False):
         """Affiche l'unité avec son image sur l'écran, et ajoute un contour si l'unité est active."""
         # Dessiner un contour si l'unité est active
@@ -59,8 +83,7 @@ class Unit:
                 screen,
                 (255, 255, 0),  # Couleur jaune pour l'unité active
                 (self.x * CELL_SIZE - 2, self.y * CELL_SIZE - 2, CELL_SIZE + 4, CELL_SIZE + 4),  # Contour autour de l'image
-                  #4 Épaisseur du contour
-        )
+            )
 
         # Afficher l'image de l'unité
         if self.image:
@@ -74,6 +97,12 @@ class Unit:
         pygame.draw.rect(screen, (255, 0, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, CELL_SIZE, 5))
         current_health_width = int(CELL_SIZE * self.health / 100)
         pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, current_health_width, 5))
+
+
+
+
+
+
 
     def take_damage(self, amount):
         """Réduit les dégâts reçus si la cible est un Tank."""
@@ -110,6 +139,10 @@ class Unit:
                 print(f"{cible.nom} a été vaincu !")
         else:
             self.log.append((utilisateur.nom, competence.nom, cible.nom, "Échec"))
+
+
+
+    
 
 
 

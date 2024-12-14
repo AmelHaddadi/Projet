@@ -159,8 +159,4 @@ class MenuManager:
                     # Vérifier si l'utilisateur appuie sur une touche de 1 à 9 pour sélectionner une cible
                     index = event.key - pygame.K_1
                     if 0 <= index < len(cibles):
-<<<<<<< HEAD
                         return cibles[index]  # Retourne la cible choisie
-=======
-                        return cibles[index]  # Retourne la cible choisie
->>>>>>> dbbbd56bb20d67d6265dcc0117d7eef442485579
