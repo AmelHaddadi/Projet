@@ -3,7 +3,7 @@
 ### Un jeu tactique au tour par tour avec des personnages uniques et des compétences variées.
 
 Bienvenue dans **Jeu de Stratégie Pygame**
-
+Ce projet est un jeu de stratégie 2D développé en Python en utilisant la bibliothèque Pygame. Il met en œuvre des mécanismes tels que le déplacement d'unités sur une grille, des compétences spéciales, des interactions entre joueurs et ennemis, ainsi que des animations et une interface utilisateur intuitive pour sélectionner des options dans le jeu.
 ## **Fonctionnalités**
 - Sélection de personnages et modes de jeu variés.
 - Gestion des compétences (soin, dégâts, etc.).
@@ -20,6 +20,8 @@ Voici les principaux fichiers et leur rôle dans le projet :
 - **`unit.py`** : 
   - Définit la classe `Unit`, qui représente les personnages du jeu (joueurs ou ennemis).
   - Gère les actions comme le déplacement, l'attaque, et la gestion des compétences.
+  - `PlayerUnit` : Hérite de Unit et représente les unités contrôlées par le joueur.
+  - `EnemyUnit` : Hérite de Unit et représente les unités ennemies.
 
 - **`competence.py`** : 
   - Contient la classe `Competence`, qui définit les compétences disponibles.
@@ -54,9 +56,14 @@ Voici les principaux fichiers et leur rôle dans le projet :
     Les personnages pour votre équipe.
     Le mode de jeu (air, feu, terre, électricité).
 3. Utilisez le clavier pour contrôler les personnages :
+
     **Flèches directionnelles** : Déplacement.
+
     **C** : Utiliser une compétence.
+
     **Q** : Aucun choix effectué et annuler .
+
+    **S** : Utiliser une action spécifique.
 4. Terminez le jeu en éliminant tous les ennemis ou en perdant tous vos personnages.
 
 ## **Crédits** 

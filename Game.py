@@ -165,9 +165,16 @@ class Game:
         #Verifier si le jeu est terminé
         self.check_end_game()
         return True
+    def verifier_unites_mortes(self):
+        """Supprime les unités mortes des listes et vérifie si le jeu est terminé."""
+        self.player_units = [unit for unit in self.player_units if unit.health > 0]
+        self.enemy_units = [unit for unit in self.enemy_units if unit.health > 0]
+        self.check_end_game()
+
     def handle_player_turn(self):
     #"""Tour du joueur."""
         print("Tour des joueurs")  # Debug
+        self.check_end_game()
         for selected_unit in self.player_units:
             has_acted = False
             selected_unit.is_selected = True
@@ -223,30 +230,32 @@ class Game:
 
             # Marquez la fin de l'action de cette unité
             selected_unit.is_selected = False
-
-
-
-
+            self.verifier_unites_mortes()
 
     def handle_enemy_turn(self):
         """Tour des ennemis."""
-        print("Début du tour des ennemis") 
+        print("Début du tour des ennemis")
         for enemy in self.enemy_units:
-            #Verifier si le jeu est terminé
+            # Vérifier si le jeu est terminé après chaque action
             self.check_end_game()
-             # Déterminer si l'ennemi utilise sa capacité spéciale ou agit normalement
-            if random.random() < 0.4:  # 40% de chances d'utiliser la capacité spéciale
-                enemy.special_action(self.player_units)  # Utilise la capacité spéciale
-            target = random.choice(self.player_units)
+        
+            # L'ennemi utilise toujours sa capacité spéciale si applicable
+            if isinstance(enemy, EnemyUnit):
+                enemy.special_action(self.player_units)
+
+            # Ensuite, l'ennemi agit normalement (se déplacer ou attaquer)
+            target = random.choice(self.player_units)  # Choisir une cible
             dx = (1 if enemy.x < target.x else -1 if enemy.x > target.x else 0)
             dy = (1 if enemy.y < target.y else -1 if enemy.y > target.y else 0)
-              # Limiter le déplacement par la vitesse de l'ennemi
+
+            # Limiter le déplacement par la vitesse de l'ennemi
             dx = max(-enemy.vitesse, min(dx, enemy.vitesse))
             dy = max(-enemy.vitesse, min(dy, enemy.vitesse))
 
-                # Déplacer l'ennemi
+            # Déplacer l'ennemi
             enemy.move(dx, dy, self.player_units + self.enemy_units)
-            # Utiliser une compétence ou attaquer
+
+            # Si la cible est à portée, attaquer ou utiliser une compétence
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                 competence = random.choice(enemy.competences) if enemy.competences else None
                 if competence:
@@ -255,10 +264,12 @@ class Game:
                 else:
                     enemy.attack(target)
 
-                # Supprimer l'unité si elle est vaincue
-                    if target.health <= 0:
-                        self.player_units.remove(target)
+            # Supprimer les unités mortes après chaque action
+            self.verifier_unites_mortes()
+
+    # Mettre à jour l'affichage après toutes les actions des ennemis
         self.flip_display()
+
     def dessiner_grille(self):
         """Dessine une grille sur l'écran."""
         for x in range(0, WIDTH, CELL_SIZE):
@@ -275,9 +286,6 @@ class Game:
 
         self.dessiner_grille()  # Dessiner la grille
 
-
-        
-
         # Dessiner les unités et leur champ de vision uniquement pour l'unité active
         for unit in self.player_units + self.enemy_units:
             # Afficher le champ de vision uniquement pour l'unité active
@@ -293,19 +301,17 @@ class Game:
         pygame.display.flip()
 
 
-
-
     def check_end_game(self):
-
-        """Vérifie si le jeu est terminé (victoire ou défaite)."""
-        if not self.enemy_units:  # Si tous les ennemis sont éliminés
-            action = self.afficher_interface_fin("victoire")
-            if action == "rejouer":
-                self.reinitialiser_jeu()
-        elif not self.player_units:  # Si tous les joueurs sont éliminés
+        """Vérifie si le jeu est terminé."""
+        if not any(isinstance(unit, PlayerUnit) for unit in self.player_units):
             action = self.afficher_interface_fin("echec")
             if action == "rejouer":
                 self.reinitialiser_jeu()
+        elif not any(isinstance(unit, EnemyUnit) for unit in self.enemy_units):
+            action = self.afficher_interface_fin("victoire")
+            if action == "rejouer":
+                self.reinitialiser_jeu()
+
 
     def afficher_message_fin(self, message):
         """Affiche un message de fin du jeu (Victoire ou Défaite)."""
