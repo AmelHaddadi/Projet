@@ -7,6 +7,7 @@ from CompetenceManager import CompetenceManager
 from MenuManager import MenuManager
 from MenuSelection import *
 
+
 # Constantes
 WIDTH, HEIGHT = 1000, 700  # Dimensions de la fenêtre
 GRID_SIZE = 8  # Taille de la grille
@@ -21,6 +22,8 @@ try:
 except pygame.error as e:
     print("Erreur lors du chargement du son :", e)
     explosion_sound = None  # Si le son ne peut pas être chargé, on continue sans
+
+    
 
 class Game:
     """
@@ -78,6 +81,23 @@ class Game:
         self.ajouter_competences()
          # Initialisation des gestionnaires
         self.competence_manager = CompetenceManager()  # Initialisation de CompetenceManager
+
+
+        # Ajout des obstacles
+        self.obstacles = [(3,3),(5,5),(2,6),(1,5),(2,4),(4,5),(9,2),(12,5),(12,4),(8,2),(10,10),(11,11),(1,6),(2,6),(1,7),(2,7),(0,3),(5,1)]  # Exemple d'obstacles à des coordonnées spécifiques
+
+    def is_occupied(self, units, x, y):
+        """Vérifie si une case est occupée par une unité ou un obstacle."""
+        # Vérifier si la case est un obstacle
+        if (x, y) in self.obstacles:
+            return True
+
+        # Vérifier si la case est occupée par une autre unité
+        for unit in units:
+            if unit.x == x and unit.y == y:
+                return True
+        return False
+
         
     def ajouter_competences(self):
         """Ajoute des compétences aux unités sélectionnées et aux ennemis."""
@@ -214,6 +234,7 @@ class Game:
                             if abs(dx) > selected_unit.vitesse or abs(dy) > selected_unit.vitesse:
                                 print(f"{selected_unit.nom} ne peut pas se déplacer de plus de {selected_unit.vitesse} cases par tour.")
                             else:
+                                # Vérifier que la case cible n'est pas occupée par un obstacle ou une autre unité
                                 selected_unit.move(dx, dy, self.player_units + self.enemy_units)  # Vérifier l'occupation avec toutes les unités
                                 self.flip_display(active_unit=selected_unit)
                                 move_attempted = True  # Le joueur a effectué un déplacement
@@ -227,12 +248,12 @@ class Game:
 
 
     def handle_enemy_turn(self):
-        """Tour des ennemis."""
+    #"""Tour des ennemis."""
         print("Début du tour des ennemis") 
         for enemy in self.enemy_units:
-            #Verifier si le jeu est terminé
-            self.check_end_game()
-            target = random.choice(self.player_units)
+            target = random.choice(self.player_units)  # Choisir un joueur comme cible
+
+            # Calcul du déplacement (choisir la direction la plus proche)
             dx = (1 if enemy.x < target.x else -1 if enemy.x > target.x else 0)
             dy = (1 if enemy.y < target.y else -1 if enemy.y > target.y else 0)
 
@@ -240,8 +261,18 @@ class Game:
             dx = max(-enemy.vitesse, min(dx, enemy.vitesse))
             dy = max(-enemy.vitesse, min(dy, enemy.vitesse))
 
+            # Vérifier si la case est occupée ou est un obstacle
+            new_x, new_y = enemy.x + dx, enemy.y + dy
+
+            # Appel à la méthode `is_occupied` sur l'objet enemy
+            if enemy.is_occupied(self.player_units + self.enemy_units, new_x, new_y):
+                print(f"Case ({new_x}, {new_y}) est occupée ou un obstacle. {enemy.nom} ne peut pas se déplacer.")
+                continue  # L'ennemi essaie une autre direction (ici, on passe à l'itération suivante de la boucle)
+            
             # Déplacer l'ennemi
             enemy.move(dx, dy, self.player_units + self.enemy_units)
+            self.flip_display()  # Met à jour l'affichage
+
             # Utiliser une compétence ou attaquer
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                 competence = random.choice(enemy.competences) if enemy.competences else None
@@ -254,13 +285,15 @@ class Game:
                 # Supprimer l'unité si elle est vaincue
                 if target.health <= 0:
                     self.player_units.remove(target)
-            self.flip_display()
     def dessiner_grille(self):
-        """Dessine une grille sur l'écran."""
+    #"""Dessine une grille sur l'écran, avec des obstacles en gris."""
         for x in range(0, WIDTH, CELL_SIZE):
-            pygame.draw.line(self.screen, (200, 200, 200), (x, 0), (x, HEIGHT), 1)  # Lignes verticales
-        for y in range(0, HEIGHT, CELL_SIZE):
-            pygame.draw.line(self.screen, (200, 200, 200), (0, y), (WIDTH, y), 1)  # Lignes horizontales
+            for y in range(0, HEIGHT, CELL_SIZE):
+                # Vérifier si la case contient un obstacle
+                if (x // CELL_SIZE, y // CELL_SIZE) in obstacles:
+                    pygame.draw.rect(self.screen, (169, 169, 169), pygame.Rect(x, y, CELL_SIZE, CELL_SIZE))  # Gris pour les obstacles
+                else:
+                    pygame.draw.rect(self.screen, (200, 200, 200), pygame.Rect(x, y, CELL_SIZE, CELL_SIZE), 1)  # Grille normale
 
     def flip_display(self, active_unit=None):
         """Met à jour l'affichage du jeu, en mettant en évidence l'unité active."""

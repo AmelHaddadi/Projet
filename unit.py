@@ -15,6 +15,7 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 VISION_RANGE = 5
+obstacles = [(3,3),(5,5),(2,6),(1,5),(2,4),(4,5),(9,2),(12,5),(12,4),(8,2),(10,10),(11,11),(1,6),(2,6),(1,7),(2,7),(0,3),(5,1)]  # Exemple d'obstacles à des coordonnées spécifiques
 
 class Unit:
     def __init__(self, x, y, health, attack_power, team, nom="Unité", vitesse=1, etats=None, image_path=None, vision_range=VISION_RANGE):
@@ -36,36 +37,37 @@ class Unit:
         self.image = pygame.image.load(image_path) if image_path else None
 
     def is_occupied(self, units, x, y):
-    #"""Vérifie si la case (x, y) est déjà occupée par une autre unité."""
+        """Vérifie si une case est occupée par une unité ou un obstacle."""
+        # Vérifier si la case est un obstacle
+        if (x, y) in obstacles:
+            return True
+
+        # Vérifier si la case est occupée par une autre unité
         for unit in units:
             if unit.x == x and unit.y == y:
-                return True  # La case est occupée
-        return False  # La case n'est pas occupée
+                return True
+        return False
 
     def move(self, dx, dy, units):
-    #"""Déplace l'unité de dx, dy en respectant sa vitesse et en vérifiant si la case est libre."""
+        """Déplace l'unité de dx, dy en respectant sa vitesse et en vérifiant les obstacles."""
         if abs(dx) > self.vitesse or abs(dy) > self.vitesse:
             print(f"{self.nom} ne peut pas se déplacer de plus de {self.vitesse} cases par tour.")
             return
 
         new_x, new_y = self.x + dx, self.y + dy
 
-        # Vérifier si la case est occupée
+        # Vérifier si la nouvelle case est un obstacle ou occupée par une autre unité
         if self.is_occupied(units, new_x, new_y):
-            print(f"Case occupée par une autre unité. {self.nom} ne peut pas se déplacer vers ({new_x}, {new_y}).")
-            
-            # Essayer une autre direction
-            for new_dx, new_dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Essayer gauche, droite, haut, bas
-                alternative_x, alternative_y = self.x + new_dx, self.y + new_dy
-                # Vérifier si la nouvelle direction est libre
-                if not self.is_occupied(units, alternative_x, alternative_y) and 0 <= alternative_x < GRID_SIZE and 0 <= alternative_y < GRID_SIZE:
-                    self.x = alternative_x
-                    self.y = alternative_y
-                    print(f"{self.nom} se déplace vers ({self.x}, {self.y}) après avoir évité la case occupée.")
-                    return  # Déplacement réussi, sortir de la fonction
-
-            print(f"Aucune direction libre pour {self.nom}, déplacement annulé.")  # Si aucune case libre n'est trouvée
+            print(f"Case ({new_x}, {new_y}) est occupée ou un obstacle. {self.nom} ne peut pas se déplacer.")
             return
+
+        # Vérifier si la nouvelle position est dans les limites de la grille
+        if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+            self.x = new_x
+            self.y = new_y
+            print(f"{self.nom} s'est déplacé vers ({self.x}, {self.y}).")
+        else:
+            print(f"{self.nom} ne peut pas sortir de la grille (position : {self.x}, {self.y}).")
 
         # Vérifier si la nouvelle position est dans les limites de la grille
         if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
