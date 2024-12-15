@@ -31,7 +31,6 @@ class Unit:
 
         self.vision_range = vision_range  # Plage de vision     ##############
 
-        
         # Charger l'image si un chemin est fourni
         self.image = pygame.image.load(image_path) if image_path else None
 
@@ -74,15 +73,11 @@ class Unit:
             print(f"{self.nom} s'est déplacé vers ({self.x}, {self.y}).")
         else:
             print(f"{self.nom} ne peut pas sortir de la grille (position : {self.x}, {self.y}).")
-
-
             
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
             target.take_damage(self.attack_power)
-
-
 
     def draw_vision(self, screen):
         """Dessine le champ de vision de l'unité (cercle autour de l'unité)."""
@@ -97,9 +92,6 @@ class Unit:
                         # Dessiner le champ de vision
                         pygame.draw.rect(screen, (0, 255, 0),  # Couleur cyan pour le champ de vision
                                          pygame.Rect(vision_x * CELL_SIZE, vision_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
-
-
-    
 
     def draw(self, screen, is_active=False):
         """Affiche l'unité avec son image sur l'écran, et ajoute un contour si l'unité est active."""
@@ -124,7 +116,6 @@ class Unit:
         current_health_width = int(CELL_SIZE * self.health / 100)
         pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, current_health_width, 5))
 
-
     def est_dans_vision(self, cible):
         #"""Vérifie si l'ennemi est dans le champ de vision de l'unité."""
         # Calculer la distance euclidienne entre l'unité et la cible
@@ -135,10 +126,6 @@ class Unit:
 
         # Vérifier si la cible est dans la portée de vision
         return distance <= self.vision_range
-
-
-
-
 
     def take_damage(self, amount):
         """Réduit les dégâts reçus si la cible est un Tank."""
@@ -152,8 +139,6 @@ class Unit:
             print(f"{self.nom} est mort.")
         else:
             print(f"{self.nom} subit {amount} dégâts, santé actuelle : {self.health}.")
-
-
 
     def heal(self, amount):
         """Soigne l'unité en ajoutant des points de vie."""
@@ -196,12 +181,10 @@ class PlayerUnit(Unit):
         text = font.render(f"Spécial : {self.special_uses}", True, (255, 255, 0))  # Texte en jaune
         screen.blit(text, (self.x * CELL_SIZE, self.y * CELL_SIZE - 20))  # Position au-dessus de l'unité
 
-
 # Classe pour les unités ennemies
 class EnemyUnit(Unit):
     def __init__(self, x, y, health, attack_power, nom="Ennemi", vitesse=1, image_path=None):
         super().__init__(x, y, health, attack_power, team='enemy', nom=nom, vitesse=vitesse, image_path=image_path)
-
 
     def special_action(self, player_units):
         if "sorcier" in self.nom.lower():
