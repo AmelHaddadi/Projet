@@ -35,6 +35,7 @@ class Unit:
         
         # Charger l'image si un chemin est fourni
         self.image = pygame.image.load(image_path) if image_path else None
+        self.move_message_displayed = False  # Flag pour afficher le message de déplacement qu'une seule fois
 
     def is_occupied(self, units, x, y):
         """Vérifie si une case est occupée par une unité ou un obstacle."""
@@ -49,33 +50,26 @@ class Unit:
         return False
 
     def move(self, dx, dy, units):
-        """Déplace l'unité de dx, dy en respectant sa vitesse et en vérifiant les obstacles."""
-        if abs(dx) > self.vitesse or abs(dy) > self.vitesse:
-            print(f"{self.nom} ne peut pas se déplacer de plus de {self.vitesse} cases par tour.")
-            return
-
+        """Déplace l'unité de dx, dy en respectant sa vitesse et en évitant les collisions."""
+        # Vérifier si la case cible est occupée par un obstacle ou une autre unité
         new_x, new_y = self.x + dx, self.y + dy
 
-        # Vérifier si la nouvelle case est un obstacle ou occupée par une autre unité
         if self.is_occupied(units, new_x, new_y):
-            print(f"Case ({new_x}, {new_y}) est occupée ou un obstacle. {self.nom} ne peut pas se déplacer.")
-            return
+            print(f"{self.nom} ne peut pas se déplacer vers ({new_x}, {new_y}) car la case est occupée ou c'est un obstacle.")
+            return  # L'unité ne peut pas se déplacer si la case est occupée
 
-        # Vérifier si la nouvelle position est dans les limites de la grille
-        if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
-            self.x = new_x
-            self.y = new_y
-            print(f"{self.nom} s'est déplacé vers ({self.x}, {self.y}).")
-        else:
-            print(f"{self.nom} ne peut pas sortir de la grille (position : {self.x}, {self.y}).")
+        # Mettre à jour la position de l'unité si la case est libre
+        self.x = new_x
+        self.y = new_y
 
-        # Vérifier si la nouvelle position est dans les limites de la grille
-        if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
-            self.x = new_x
-            self.y = new_y
+        # Afficher le message de déplacement qu'une seule fois
+        if not self.move_message_displayed:
             print(f"{self.nom} s'est déplacé vers ({self.x}, {self.y}).")
-        else:
-            print(f"{self.nom} ne peut pas sortir de la grille (position : {self.x}, {self.y}).")
+            self.move_message_displayed = True  # Marquer le message comme affiché
+
+    def reset_move_message(self):
+        """Réinitialiser le flag pour l'affichage du message de déplacement au début du prochain tour."""
+        self.move_message_displayed = False
 
 
             

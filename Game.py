@@ -185,7 +185,7 @@ class Game:
         self.check_end_game()
         return True
     def handle_player_turn(self):
-    #"""Tour du joueur."""
+        """Tour du joueur."""
         print("Tour des joueurs")  # Debug
         for selected_unit in self.player_units:
             has_acted = False
@@ -193,6 +193,7 @@ class Game:
             self.flip_display(active_unit=selected_unit)
 
             move_attempted = False  # Flag pour vérifier si un déplacement a eu lieu
+            ability_used = False  # Flag pour vérifier si une compétence a été utilisée
 
             while not has_acted:
                 for event in pygame.event.get():
@@ -206,6 +207,7 @@ class Game:
                             if selected_unit.est_dans_vision(self.enemy_units[0]):  # Assumer que l'ennemi est sélectionné
                                 action_result = self.utiliser_competence(selected_unit)
                                 if action_result:
+                                    ability_used = True  # Indique qu'une compétence a été utilisée
                                     has_acted = True
                                     selected_unit.is_selected = False
                             else:
@@ -216,8 +218,7 @@ class Game:
                                     move_attempted = True  # Première tentative de déplacement
                                 else:
                                     print(f"{selected_unit.nom} ne peut plus agir, le tour passe.")
-                                    has_acted = True  # Si le joueur a déjà tenté un déplacement, on passe le tour
-                                selected_unit.is_selected = False
+                                    has_acted = True  # Le tour passe après le déplacement
 
                         elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
                             dx, dy = 0, 0
@@ -238,11 +239,10 @@ class Game:
                                 selected_unit.move(dx, dy, self.player_units + self.enemy_units)  # Vérifier l'occupation avec toutes les unités
                                 self.flip_display(active_unit=selected_unit)
                                 move_attempted = True  # Le joueur a effectué un déplacement
-                                has_acted = True  # Le tour peut passer après ce déplacement
+                                has_acted = True  # Le tour passe après le déplacement
 
             # Marquez la fin de l'action de cette unité
             selected_unit.is_selected = False
-
 
 
 
