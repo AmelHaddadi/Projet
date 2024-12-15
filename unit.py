@@ -172,6 +172,40 @@ class Unit:
         else:
             self.log.append((utilisateur.nom, competence.nom, cible.nom, "Échec"))
 
+ # Classe pour les unités du joueur :   Héritage
+class PlayerUnit(Unit):
+    def __init__(self, x, y, health, attack_power, nom="Joueur", vitesse=1, image_path=None):
+        super().__init__(x, y, health, attack_power, team='player', nom=nom, vitesse=vitesse, image_path=image_path)
+        """Capacité spéciale pour les joueurs : Soigne l'unité."""
+        self.special_uses = 3  # Limite d'utilisation de la capacité spéciale
+    def special_ability(self):
+        """Capacité spéciale pour les joueurs : Soigne l'unité."""
+        if self.special_uses > 0:  # Vérifie si la capacité peut encore être utilisée
+            self.heal(5)  # Récupère 6 PV
+            self.special_uses -= 1  # Réduit le compteur d'utilisation
+            print(f"{self.nom} utilise une capacité spéciale et récupère 6 PV. Utilisations restantes : {self.special_uses}.")
+        else:
+            print(f"{self.nom} ne peut plus utiliser de capacité spéciale. Limite atteinte.")
+    def draw_special_uses(self, screen):
+        """Affiche le nombre d'utilisations restantes de la capacité spéciale au-dessus de l'unité."""
+        font = pygame.font.Font(None, 24)
+        text = font.render(f"Spécial : {self.special_uses}", True, (255, 255, 0))  # Texte en jaune
+        screen.blit(text, (self.x * CELL_SIZE, self.y * CELL_SIZE - 20))  # Position au-dessus de l'unité
+
+
+# Classe pour les unités ennemies
+class EnemyUnit(Unit):
+    def __init__(self, x, y, health, attack_power, nom="Ennemi", vitesse=1, image_path=None):
+        super().__init__(x, y, health, attack_power, team='enemy', nom=nom, vitesse=vitesse, image_path=image_path)
+
+
+    def special_action(self, player_units):
+        if "sorcier" in self.nom.lower():
+            # Inflige des dégâts à tous les joueurs dans un rayon
+            for unit in player_units:
+                if abs(self.x - unit.x) <= 2 and abs(self.y - unit.y) <= 2:  # Rayon de 2 cases
+                    unit.take_damage(5)
+                    print(f"{self.nom} (Sorcier) inflige 5 dégâts à {unit.nom}.")
 
 
     

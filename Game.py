@@ -58,18 +58,20 @@ class Game:
         "sorcier": 1,
         }
 
+        # Création des unités du joueur en utilisant PlayerUnit
         self.player_units = [
-            Unit(0, i, 100, 2, 'player', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
+            PlayerUnit(0, i, 100, 2, char_name, vitesse=CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
             for i, char_name in enumerate(selected_characters)
         ]
 
-        # Initialisation des unités ennemies avec 3 personnages aléatoires
+        # Création des unités ennemies en utilisant EnemyUnit
         all_characters = ["tireur", "tueur", "tank", "sorcier"]
         enemy_characters = random.sample(all_characters, 3)
         self.enemy_units = [
-            Unit(7, i, 100, 1, 'enemy', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
+            EnemyUnit(7, i, 100, 1, char_name, vitesse=CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
             for i, char_name in enumerate(enemy_characters)
         ]
+
 
         # Initialisation des gestionnaires
         colors = {'white': WHITE, 'black': BLACK, 'red': RED, 'green': GREEN, 'blue': BLUE}
@@ -219,7 +221,8 @@ class Game:
                                 else:
                                     print(f"{selected_unit.nom} ne peut plus agir, le tour passe.")
                                     has_acted = True  # Le tour passe après le déplacement
-
+                        elif event.key == pygame.K_s:  #  utiliser une capacité spéciale 
+                            selected_unit.special_ability()
                         elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
                             dx, dy = 0, 0
                             if event.key == pygame.K_LEFT:
@@ -243,17 +246,30 @@ class Game:
 
             # Marquez la fin de l'action de cette unité
             selected_unit.is_selected = False
-
-
-
-
     def handle_enemy_turn(self):
-    #"""Tour des ennemis."""
-        print("Début du tour des ennemis") 
-        for enemy in self.enemy_units:
-            target = random.choice(self.player_units)  # Choisir un joueur comme cible
+        """Tour des ennemis."""
+        print("Début du tour des ennemis")
 
-            # Calcul du déplacement (choisir la direction la plus proche)
+        for enemy in self.enemy_units:
+            # Vérifier si le jeu est terminé
+            self.check_end_game()
+
+            # Choisir une cible parmi les joueurs
+            target = random.choice(self.player_units)  # Choisir une cible aléatoire parmi les unités des joueurs
+
+            # Vérifier si la cible est à portée d'attaque directe
+            if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
+                # Attaquer directement si la cible est à portée
+                print(f"{enemy.nom} attaque directement {target.nom}")
+                enemy.attack(target)
+
+                # Vérifier si la cible a été éliminée
+                if target.health <= 0:
+                    print(f"{target.nom} a été éliminé par {enemy.nom}.")
+                    self.player_units.remove(target)
+                continue  # Passer au prochain ennemi
+
+            # Calculer le déplacement si l'attaque directe n'est pas possible
             dx = (1 if enemy.x < target.x else -1 if enemy.x > target.x else 0)
             dy = (1 if enemy.y < target.y else -1 if enemy.y > target.y else 0)
 
@@ -261,30 +277,34 @@ class Game:
             dx = max(-enemy.vitesse, min(dx, enemy.vitesse))
             dy = max(-enemy.vitesse, min(dy, enemy.vitesse))
 
-            # Vérifier si la case est occupée ou est un obstacle
+            # Vérifier si la case cible est occupée ou un obstacle
             new_x, new_y = enemy.x + dx, enemy.y + dy
-
-            # Appel à la méthode `is_occupied` sur l'objet enemy
-            if enemy.is_occupied(self.player_units + self.enemy_units, new_x, new_y):
+            if self.is_occupied(self.player_units + self.enemy_units, new_x, new_y):
                 print(f"Case ({new_x}, {new_y}) est occupée ou un obstacle. {enemy.nom} ne peut pas se déplacer.")
-                continue  # L'ennemi essaie une autre direction (ici, on passe à l'itération suivante de la boucle)
-            
+                continue  # Passer au prochain ennemi
+
             # Déplacer l'ennemi
             enemy.move(dx, dy, self.player_units + self.enemy_units)
-            self.flip_display()  # Met à jour l'affichage
+            self.flip_display()  # Mettre à jour l'affichage après déplacement
 
-            # Utiliser une compétence ou attaquer
+            # Vérifier si une attaque ou une compétence peut être utilisée après le déplacement
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                 competence = random.choice(enemy.competences) if enemy.competences else None
                 if competence:
+                    print(f"{enemy.nom} utilise {competence.nom} sur {target.nom}")
                     self.animation_manager.animer_attaque(target.x, target.y)
                     self.competence_manager.utiliser_competence(competence, enemy, target)
                 else:
                     enemy.attack(target)
 
-                # Supprimer l'unité si elle est vaincue
+                # Vérifier si la cible a été éliminée
                 if target.health <= 0:
+                    print(f"{target.nom} a été éliminé par {enemy.nom}.")
                     self.player_units.remove(target)
+
+        # Mettre à jour l'affichage après le tour des ennemis
+        self.flip_display()
+
     def dessiner_grille(self):
     #"""Dessine une grille sur l'écran, avec des obstacles en gris."""
         for x in range(0, WIDTH, CELL_SIZE):
@@ -316,6 +336,9 @@ class Game:
             unit.draw(self.screen, is_active=is_active)  # Dessiner l'unité
 
 
+             # Si l'unité est un joueur, afficher le nombre d'utilisations restantes
+            if isinstance(unit, PlayerUnit):  # Vérifie si l'unité est une unité de type PlayerUnit
+                unit.draw_special_uses(self.screen)  # Affiche les utilisations restantes des capacités spéciales
 
         pygame.display.flip()
 
@@ -401,7 +424,7 @@ class Game:
     def reinitialiser_jeu(self):
         """Réinitialise complètement le jeu en retournant au menu de sélection."""
         # Appeler le menu de sélection pour recommencer
-        personnages, mode = afficher_menu_selection()
+        selected_characters, mode = afficher_menu_selection()
     
         # Mettre à jour les unités du joueur et le mode
         self.mode = mode
@@ -416,19 +439,20 @@ class Game:
         "tank": 2,
         "sorcier": 1,
         }
+                # Création des unités du joueur en utilisant PlayerUnit
         self.player_units = [
-            Unit(0, i, 100, 2, 'player', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
-            for i, char_name in enumerate(personnages)
+            PlayerUnit(0, i, 100, 2, char_name, vitesse=CHARACTER_SPEEDS[char_name], image_path=f"{char_name}.png")
+            for i, char_name in enumerate(selected_characters)
         ]
-    
-        # Réinitialiser les unités ennemies avec 3 personnages aléatoires
+
+        # Création des unités ennemies en utilisant EnemyUnit
         all_characters = ["tireur", "tueur", "tank", "sorcier"]
         enemy_characters = random.sample(all_characters, 3)
         self.enemy_units = [
-            Unit(7, i, 100, 1, 'enemy', char_name, CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
+            EnemyUnit(7, i, 100, 1, char_name, vitesse=CHARACTER_SPEEDS[char_name], image_path=f"{char_name}_enemy.png")
             for i, char_name in enumerate(enemy_characters)
         ]
-    
+
         # Réinitialiser les compétences
         self.ajouter_competences()
 
