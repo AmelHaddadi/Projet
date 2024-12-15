@@ -1,7 +1,7 @@
 import pygame
 import random
 
-from unit import *
+from unitbiz import *
 from cases import Cell
 
 # Define new dimensions for the grid

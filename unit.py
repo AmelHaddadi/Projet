@@ -15,7 +15,6 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 VISION_RANGE = 5
-obstacles = [(3,3),(5,5),(2,6),(1,5),(2,4),(4,5),(9,2),(12,5),(12,4),(8,2),(10,10),(11,11),(1,6),(2,6),(1,7),(2,7),(0,3),(5,1)]  # Exemple d'obstacles à des coordonnées spécifiques
 
 class Unit:
     def __init__(self, x, y, health, attack_power, team, nom="Unité", vitesse=1, etats=None, image_path=None, vision_range=VISION_RANGE):
@@ -35,41 +34,46 @@ class Unit:
         
         # Charger l'image si un chemin est fourni
         self.image = pygame.image.load(image_path) if image_path else None
-        self.move_message_displayed = False  # Flag pour afficher le message de déplacement qu'une seule fois
 
     def is_occupied(self, units, x, y):
-        """Vérifie si une case est occupée par une unité ou un obstacle."""
-        # Vérifier si la case est un obstacle
-        if (x, y) in obstacles:
-            return True
-
-        # Vérifier si la case est occupée par une autre unité
+    #"""Vérifie si la case (x, y) est déjà occupée par une autre unité."""
         for unit in units:
             if unit.x == x and unit.y == y:
-                return True
-        return False
+                return True  # La case est occupée
+        return False  # La case n'est pas occupée
 
     def move(self, dx, dy, units):
-        """Déplace l'unité de dx, dy en respectant sa vitesse et en évitant les collisions."""
-        # Vérifier si la case cible est occupée par un obstacle ou une autre unité
+    #"""Déplace l'unité de dx, dy en respectant sa vitesse et en vérifiant si la case est libre."""
+        if abs(dx) > self.vitesse or abs(dy) > self.vitesse:
+            print(f"{self.nom} ne peut pas se déplacer de plus de {self.vitesse} cases par tour.")
+            return
+
         new_x, new_y = self.x + dx, self.y + dy
 
+        # Vérifier si la case est occupée
         if self.is_occupied(units, new_x, new_y):
-            print(f"{self.nom} ne peut pas se déplacer vers ({new_x}, {new_y}) car la case est occupée ou c'est un obstacle.")
-            return  # L'unité ne peut pas se déplacer si la case est occupée
+            print(f"Case occupée par une autre unité. {self.nom} ne peut pas se déplacer vers ({new_x}, {new_y}).")
+            
+            # Essayer une autre direction
+            for new_dx, new_dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Essayer gauche, droite, haut, bas
+                alternative_x, alternative_y = self.x + new_dx, self.y + new_dy
+                # Vérifier si la nouvelle direction est libre
+                if not self.is_occupied(units, alternative_x, alternative_y) and 0 <= alternative_x < GRID_SIZE and 0 <= alternative_y < GRID_SIZE:
+                    self.x = alternative_x
+                    self.y = alternative_y
+                    print(f"{self.nom} se déplace vers ({self.x}, {self.y}) après avoir évité la case occupée.")
+                    return  # Déplacement réussi, sortir de la fonction
 
-        # Mettre à jour la position de l'unité si la case est libre
-        self.x = new_x
-        self.y = new_y
+            print(f"Aucune direction libre pour {self.nom}, déplacement annulé.")  # Si aucune case libre n'est trouvée
+            return
 
-        # Afficher le message de déplacement qu'une seule fois
-        if not self.move_message_displayed:
+        # Vérifier si la nouvelle position est dans les limites de la grille
+        if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+            self.x = new_x
+            self.y = new_y
             print(f"{self.nom} s'est déplacé vers ({self.x}, {self.y}).")
-            self.move_message_displayed = True  # Marquer le message comme affiché
-
-    def reset_move_message(self):
-        """Réinitialiser le flag pour l'affichage du message de déplacement au début du prochain tour."""
-        self.move_message_displayed = False
+        else:
+            print(f"{self.nom} ne peut pas sortir de la grille (position : {self.x}, {self.y}).")
 
 
             
@@ -171,8 +175,8 @@ class Unit:
                 print(f"{cible.nom} a été vaincu !")
         else:
             self.log.append((utilisateur.nom, competence.nom, cible.nom, "Échec"))
-
- # Classe pour les unités du joueur :   Héritage
+    
+    # Classe pour les unités du joueur :   Héritage
 class PlayerUnit(Unit):
     def __init__(self, x, y, health, attack_power, nom="Joueur", vitesse=1, image_path=None):
         super().__init__(x, y, health, attack_power, team='player', nom=nom, vitesse=vitesse, image_path=image_path)
@@ -206,6 +210,10 @@ class EnemyUnit(Unit):
                 if abs(self.x - unit.x) <= 2 and abs(self.y - unit.y) <= 2:  # Rayon de 2 cases
                     unit.take_damage(5)
                     print(f"{self.nom} (Sorcier) inflige 5 dégâts à {unit.nom}.")
+        
+
+
+
 
 
     
