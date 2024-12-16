@@ -1,11 +1,12 @@
 import pygame
 import sys
-
+from unit import *
 # Initialisation de Pygame
 pygame.init()
 
 # Dimensions de la fenêtre
-WIDTH, HEIGHT = 1000, 700
+WIDTH = GRID_SIZE * CELL_SIZE
+HEIGHT = WIDTH
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Menu de Sélection")
 
@@ -48,18 +49,18 @@ class Entite:
 
 # Charger les personnages
 personnages = [
-    Entite("tireur", pygame.image.load("tireur.png"), (100, 200),1),
-    Entite("tueur", pygame.image.load("tueur.png"), (300, 200),2),
-    Entite("tank", pygame.image.load("tank.png"), (500, 200),2),
-    Entite("sorcier", pygame.image.load("sorcier.png"), (700, 200),1),
+    Entite("tireur", pygame.image.load("tireur.png"), (50, 400),1),
+    Entite("tueur", pygame.image.load("tueur.png"), (220, 400),2),
+    Entite("tank", pygame.image.load("tank.png"), (400, 400),2),
+    Entite("sorcier", pygame.image.load("sorcier.png"), (570, 400),1),
 ]
 
 # Charger les modes
 modes = [
-    Entite("air", pygame.image.load("air.png"), (150, 450),0),
-    Entite("terre", pygame.image.load("terre.png"), (350, 450),0),
-    Entite("feu", pygame.image.load("feu.png"), (550, 450),0),
-    Entite("electricite", pygame.image.load("electricite.png"), (750, 450),0),
+    Entite("air", pygame.image.load("air.png"), (50, 450),0),
+    Entite("terre", pygame.image.load("terre.png"), (220, 450),0),
+    Entite("feu", pygame.image.load("feu.png"), (400, 450),0),
+    Entite("electricite", pygame.image.load("electricite.png"), (570, 450),0),
 ]
 
 # Afficher du texte
@@ -94,17 +95,17 @@ def afficher_menu_selection():
         if step == "welcome":
             screen.blit(welcome_image, (0, 0))
             if clignotement:
-                afficher_texte("Appuyez sur Entrée pour continuer", 250, 600)
+                afficher_texte("Appuyez sur Entrée pour continuer", 100, 400)
 
         elif step == "personnages":
             screen.blit(background_image, (0, 0))
-            afficher_texte("Choisissez 3 personnages", 300, 50)  # Texte modifié
+            afficher_texte("Choisissez 3 personnages", 200, 200)  # Texte modifié
             for personnage in personnages:
                 personnage.dessiner(screen, personnage.nom in selected_personnages)
 
         elif step == "modes":
             screen.blit(background_image, (0, 0))
-            afficher_texte("Choisissez 1 mode de jeu", 350, 50)
+            afficher_texte("Choisissez 1 mode de jeu", 200, 200)
             for mode in modes:
                 mode.dessiner(screen, mode.nom == selected_mode)
 

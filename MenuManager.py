@@ -24,7 +24,7 @@ class MenuManager:
             start_index = page * items_per_page
             end_index = min(start_index + items_per_page, len(competences))
 
-            menu_height = items_per_page * 30 + 30
+            menu_height = items_per_page * (30 + 30)
             menu_surface = pygame.Surface((self.dimensions['width'], menu_height))
             menu_surface.fill(self.colors['white'])
 

@@ -7,12 +7,6 @@ from CompetenceManager import CompetenceManager
 from MenuManager import MenuManager
 from MenuSelection import *
 
-# Constantes
-WIDTH, HEIGHT = 1000, 700  # Dimensions de la fenêtre
-GRID_SIZE = 8  # Taille de la grille
-CELL_SIZE = 60  # Taille d'une cellule
-WHITE, BLACK, RED, GREEN, BLUE = (255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)
-
 pygame.mixer.init()
 
 # Charger un son d'explosion

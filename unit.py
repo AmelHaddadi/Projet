@@ -4,10 +4,11 @@ from competence import Competence  # Assurez-vous d'importer la classe Competenc
 import math
 
 # Constantes
-GRID_SIZE = 8
-CELL_SIZE = 60
+GRID_SIZE = 15
+CELL_SIZE = 55
 WIDTH = GRID_SIZE * CELL_SIZE
-HEIGHT = GRID_SIZE * CELL_SIZE
+HEIGHT = WIDTH
+#HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)

@@ -1,7 +1,7 @@
 import pygame
 
 class AnimationManager:
-    def __init__(self, screen, colors, dimensions, cell_size=40):
+    def __init__(self, screen, colors, dimensions, cell_size=60):
         """
         Initialise le gestionnaire d'animations.
 
